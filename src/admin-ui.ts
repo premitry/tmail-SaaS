@@ -262,10 +262,9 @@ async function vSettings(){
   card('Languages','Bahasa default web publik.',
     field('Bahasa','',('<select id="l_lang" class="'+INP+'"><option value="id" '+(s.lang==='id'?'selected':'')+'>Indonesia</option><option value="en" '+(s.lang==='en'?'selected':'')+'>English</option></select>'))+
     saveBtn('saveLang()'))+
-  card('Themes','Ubah tampilan web publik. Simpan lalu buka web-nya untuk melihat.',
-    field('Tema','default = sidebar solid · mantis = hijau gradien · nebula = gelap ungu.',('<select id="t_theme" class="'+INP+'"><option value="default" '+(s.theme==='default'?'selected':'')+'>Default</option><option value="mantis" '+(s.theme==='mantis'?'selected':'')+'>Mantis</option><option value="nebula" '+(s.theme==='nebula'?'selected':'')+'>Nebula</option></select>')+
-    '<a href="/'+QS+'" target="_blank" class="text-sm text-indigo-600 inline-block mt-1">Buka web publik &rarr;</a>')+
-    saveBtn('saveTheme()'))+
+  card('Themes','Klik tema untuk ganti tampilan web publik — langsung tersimpan.',
+    '<div id="themeCards" class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl"></div>'+
+    '<a href="/'+QS+'" target="_blank" class="text-sm text-indigo-600 inline-block mt-3">Buka web publik &rarr;</a>')+
   card('Advance','API key & kunci halaman.',
     '<h4 class="text-sm font-semibold mb-1">API Keys</h4><p class="text-xs text-gray-400 mb-2">Untuk otomasi eksternal. <a href="/docs'+QS+'" target="_blank" class="text-indigo-600">Docs</a></p><div id="keyList" class="space-y-2 mb-3 max-w-lg"></div>'+
     '<div class="flex gap-2 mb-6 max-w-md"><input id="keyLabel" placeholder="label (mis. bot-signup)" class="flex-1 '+INP+'"/><button onclick="addKey()" class="bg-indigo-600 text-white px-4 rounded-lg">Buat</button></div>'+
@@ -277,7 +276,7 @@ async function vSettings(){
   card('Export / Import','Cadangkan / pulihkan daftar domain & setting.',
     '<button onclick="doExport()" class="bg-gray-800 text-white px-4 py-2 rounded-lg mr-2">Export JSON</button>'+
     '<label class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg cursor-pointer inline-block">Import<input type="file" id="impFile" class="hidden" onchange="doImport(this)"/></label>');
-  renderSoc(); loadKeys();
+  renderSoc(); loadKeys(); renderThemeCards();
 }
 function renderSoc(){ $('#socList').innerHTML=window.__soc.map((x,i)=>'<div class="flex gap-2"><input value="'+esc(x.icon)+'" onchange="window.__soc['+i+'].icon=this.value" placeholder="fab fa-twitter" class="w-40 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><input value="'+esc(x.link)+'" onchange="window.__soc['+i+'].link=this.value" placeholder="https://…" class="flex-1 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><button onclick="window.__soc.splice('+i+',1);renderSoc()" class="text-red-600 px-2">&times;</button></div>').join(''); }
 function addSoc(){ window.__soc.push({icon:'',link:''}); renderSoc(); }
@@ -289,7 +288,27 @@ function saveImap(){ const p={imap_host:$('#i_host').value,imap_port:+$('#i_port
 function saveConfig(){ put({email_limit:+$('#c_limit').value, delete_after_minutes:(+$('#c_delv').value)*(+$('#c_delu').value)}); }
 function saveSocials(){ put({socials_json:JSON.stringify(window.__soc)}); }
 function saveLang(){ put({lang:$('#l_lang').value}); }
-function saveTheme(){ put({theme:$('#t_theme').value}); }
+function themeMini(theme){
+  const s=window.__S, p=s.color_primary, sec=s.color_secondary, ter=s.color_tertiary;
+  const dot='<span style="background:'+sec+'" class="w-6 h-2 rounded-sm inline-block"></span><span style="background:'+ter+'" class="w-6 h-2 rounded-sm inline-block"></span>';
+  if(theme==='default') return '<div class="h-24 flex">'+
+    '<div class="w-1/3 flex flex-col items-center pt-2 gap-1" style="background:'+p+'"><span class="w-7 h-1.5 rounded bg-white/80"></span>'+dot+'</div>'+
+    '<div class="flex-1 bg-white dark:bg-gray-700 flex"><div class="w-1/3 border-r border-gray-100 dark:border-gray-600 p-1"><div class="h-1.5 bg-gray-200 dark:bg-gray-600 rounded mb-1"></div><div class="h-1.5 bg-gray-100 dark:bg-gray-600 rounded w-2/3"></div></div></div></div>';
+  const bar= theme==='nebula' ? 'background:linear-gradient(135deg,'+p+',#0f172a)' : 'background:'+p;
+  const page= theme==='nebula' ? 'bg-slate-900' : 'bg-white dark:bg-gray-700';
+  const l1= theme==='nebula' ? 'bg-slate-700' : 'bg-gray-200 dark:bg-gray-600';
+  const l2= theme==='nebula' ? 'bg-slate-800' : 'bg-gray-100 dark:bg-gray-600';
+  return '<div class="h-24 '+page+'">'+
+    '<div class="h-8 flex items-center gap-1 px-2" style="'+bar+'"><span class="flex-1 h-2.5 rounded bg-white/80"></span>'+dot+'</div>'+
+    '<div class="p-2 space-y-1"><div class="h-2 '+l1+' rounded"></div><div class="h-2 '+l2+' rounded w-2/3"></div></div></div>';
+}
+function renderThemeCards(){
+  const cur=window.__S.theme;
+  const defs=[['default','Default','Sidebar kiri'],['mantis','Mantis','Bar atas · terang'],['nebula','Nebula','Bar atas · gelap']];
+  $('#themeCards').innerHTML=defs.map(d=>'<button onclick="setTheme(\''+d[0]+'\')" class="text-left rounded-xl overflow-hidden border-2 '+(cur===d[0]?'border-indigo-500 ring-2 ring-indigo-200':'border-gray-200 dark:border-gray-700')+' hover:border-indigo-400 transition">'+
+    themeMini(d[0])+'<div class="px-2 py-1.5 bg-white dark:bg-gray-800"><div class="text-sm font-medium flex items-center gap-1">'+d[1]+(cur===d[0]?' <i class="fas fa-check-circle text-indigo-500 text-xs"></i>':'')+'</div><div class="text-[11px] text-gray-400">'+d[2]+'</div></div></button>').join('');
+}
+async function setTheme(theme){ window.__S.theme=theme; renderThemeCards(); await put({theme}); }
 function saveLock(){ put({lock_json:JSON.stringify({enable:$('#lk_on').checked,text:$('#lk_text').value,password:$('#lk_pass').value})}); }
 async function loadKeys(){ const d=await api('/keys'); $('#keyList').innerHTML=(d.keys||[]).map(k=>'<div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-sm"><div class="min-w-0"><span class="font-mono">'+esc(k.key)+'</span> <span class="text-gray-400 ml-2">'+esc(k.label)+'</span></div><button onclick="delKey(\''+k.id+'\')" class="text-red-600">Hapus</button></div>').join('')||'<div class="text-gray-400 text-sm">Belum ada key</div>'; }
 async function addKey(){ const label=$('#keyLabel').value; const r=await api('/keys',{method:'POST',body:JSON.stringify({label})}); if(r.key){ $('#keyLabel').value=''; loadKeys(); toast('Key dibuat'); } }

@@ -90,6 +90,7 @@ export function renderPublicPage(o: PublicOpts): string {
   </header>
   <div class="text-white" style="${t.barStyle}">
     <div class="container mx-auto px-6 py-6">
+      <h2 class="text-center text-white/90 font-semibold mb-4">Alamat email sementara kamu siap</h2>
       <div id="createPanel" class="flex flex-col md:flex-row gap-3">
         <input id="username" type="text" placeholder="username (opsional)" class="flex-1 ${inputCls}" />
         <select id="domain" class="${inputCls} cursor-pointer">${domainOptions}</select>
