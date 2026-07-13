@@ -185,7 +185,7 @@ async function loadInbox(){
   const list = $('#inboxList'); const msgs = res.messages || [];
   status(msgs.length + ' email', 'text-green-500');
   if(!msgs.length){ list.innerHTML = '<div class="h-40 flex items-center justify-center text-gray-400 text-lg">Inbox kosong</div>'; return; }
-  list.innerHTML = msgs.map(m => '<div class="p-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 '+(m.read?'':'font-semibold')+'" onclick="openMsg(\''+m.id+'\')">'+
+  list.innerHTML = msgs.map(m => '<div class="p-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 '+(m.read?'':'font-semibold')+'" onclick="openMsg(\\''+m.id+'\\')">'+
     '<div class="flex justify-between gap-2"><div class="text-sm text-gray-800 dark:text-gray-200 truncate">'+escapeHtml(m.sender)+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+timeAgo(m.received_at)+'</div></div>'+
     '<div class="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">'+escapeHtml(m.subject)+'</div>'+
     '<div class="text-xs text-gray-400 mt-1 truncate">'+escapeHtml(m.preview||'')+'</div></div>').join('');
@@ -195,7 +195,7 @@ async function openMsg(id){
   const res = await api('/message?a=' + encodeURIComponent(addr) + '&id=' + id);
   if(res.error){ alert(res.error); return; }
   const body = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
-  $('#msgView').innerHTML = '<div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-start gap-3"><div class="min-w-0"><div class="text-lg text-gray-900 dark:text-gray-100 truncate">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400 truncate">'+escapeHtml(res.sender)+'</div></div><button onclick="delMsg(\''+id+'\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md whitespace-nowrap">Hapus</button></div>'+
+  $('#msgView').innerHTML = '<div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-start gap-3"><div class="min-w-0"><div class="text-lg text-gray-900 dark:text-gray-100 truncate">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400 truncate">'+escapeHtml(res.sender)+'</div></div><button onclick="delMsg(\\''+id+'\\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md whitespace-nowrap">Hapus</button></div>'+
     '<iframe class="flex-1 w-full bg-white min-h-[320px]" sandbox="allow-same-origin" srcdoc="'+escapeAttr(body)+'"></iframe>';
   loadInbox();
 }
