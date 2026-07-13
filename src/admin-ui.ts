@@ -1,6 +1,6 @@
 // UI Admin: halaman login + shell SPA (sidebar collapsible) untuk owner & buyer.
 import { head, esc } from "./ui";
-import { DEFAULT_LOGO } from "./assets";
+import { DEFAULT_LOGO, THEME_PREVIEWS } from "./assets";
 
 export function renderLogin(brand: string, role: "owner" | "buyer", error = ""): string {
   const title = role === "owner" ? "Owner Panel" : brand + " Admin";
@@ -70,7 +70,7 @@ export function renderAdminShell(brand: string): string {
   </main>
 </div>
 <div id="modalRoot"></div>
-<script>window.DEFAULT_LOGO=${JSON.stringify(DEFAULT_LOGO)};</script>
+<script>window.DEFAULT_LOGO=${JSON.stringify(DEFAULT_LOGO)};window.THEME_PREVIEWS=${JSON.stringify(THEME_PREVIEWS)};</script>
 <script>
 ${ADMIN_APP_JS}
 </script>
@@ -306,7 +306,8 @@ function renderThemeCards(){
   const cur=window.__S.theme;
   const defs=[['default','Default','Sidebar kiri'],['mantis','Mantis','Bar atas · terang'],['nebula','Nebula','Bar atas · gelap']];
   $('#themeCards').innerHTML=defs.map(d=>'<button onclick="setTheme(\''+d[0]+'\')" class="text-left rounded-xl overflow-hidden border-2 '+(cur===d[0]?'border-indigo-500 ring-2 ring-indigo-200':'border-gray-200 dark:border-gray-700')+' hover:border-indigo-400 transition">'+
-    themeMini(d[0])+'<div class="px-2 py-1.5 bg-white dark:bg-gray-800"><div class="text-sm font-medium flex items-center gap-1">'+d[1]+(cur===d[0]?' <i class="fas fa-check-circle text-indigo-500 text-xs"></i>':'')+'</div><div class="text-[11px] text-gray-400">'+d[2]+'</div></div></button>').join('');
+    '<img src="'+(window.THEME_PREVIEWS[d[0]]||'')+'" alt="'+d[1]+'" class="w-full h-32 object-cover object-top bg-gray-100 dark:bg-gray-700"/>'+
+    '<div class="px-2 py-1.5 bg-white dark:bg-gray-800"><div class="text-sm font-medium flex items-center gap-1">'+d[1]+(cur===d[0]?' <i class="fas fa-check-circle text-indigo-500 text-xs"></i>':'')+'</div><div class="text-[11px] text-gray-400">'+d[2]+'</div></div></button>').join('');
 }
 async function setTheme(theme){ window.__S.theme=theme; renderThemeCards(); await put({theme}); }
 function saveLock(){ put({lock_json:JSON.stringify({enable:$('#lk_on').checked,text:$('#lk_text').value,password:$('#lk_pass').value})}); }

@@ -4,6 +4,15 @@ import { DB } from "./db";
 import { renderPublicPage } from "./public-ui";
 import { renderDocs } from "./docs";
 import { inboxStub, genLocalPart } from "./store";
+import { MANTIS_PATTERN } from "./assets";
+
+function dataUrlToResponse(dataUrl: string, contentType: string): Response {
+  const b64 = dataUrl.split(",")[1] || "";
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Response(arr, { headers: { "content-type": contentType, "cache-control": "public, max-age=604800" } });
+}
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -21,6 +30,10 @@ export async function handlePublic(
   req: Request, url: URL, env: Env, db: DB, tenant: Tenant, ctx: ExecutionContext,
 ): Promise<Response> {
   const path = url.pathname;
+
+  if (path === "/assets/mantis-pattern.png") {
+    return dataUrlToResponse(MANTIS_PATTERN, "image/png");
+  }
 
   if (path === "/favicon.svg" || path === "/favicon.ico") {
     const emoji = "📮";

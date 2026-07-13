@@ -20,7 +20,7 @@ export interface PublicOpts {
 
 function conf(theme: string, c: PublicOpts["colors"]) {
   if (theme === "mantis") {
-    return { layout: "topbar", page: "bg-gray-100 dark:bg-gray-950", barStyle: `background-color:${c.primary}`, headerClass: "bg-white dark:bg-gray-900" };
+    return { layout: "topbar", page: "bg-gray-100 dark:bg-gray-950", barStyle: `background-color:${c.primary};background-image:url(/assets/mantis-pattern.png)`, headerClass: "bg-white dark:bg-gray-900" };
   }
   if (theme === "nebula") {
     return { layout: "topbar", page: "bg-slate-950 text-gray-200", barStyle: `background:linear-gradient(135deg, ${c.primary}, #0f172a)`, headerClass: "bg-slate-900" };
