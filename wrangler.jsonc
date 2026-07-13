@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tmail-saas",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "vars": {
+    // Host untuk panel OWNER (superadmin). Host lain diperlakukan sebagai domain buyer.
+    // Saat tes lokal/VPS tanpa DNS, pakai override ?__tenant=owner / ?__tenant=<email-buyer>.
+    "PLATFORM_HOST": "panel.localhost",
+    "INBOX_TTL_MINUTES": "1440",
+    "BRAND_NAME": "TMail"
+    // Secret (set via `wrangler secret put`): OWNER_EMAIL, OWNER_PASSWORD,
+    // ENCRYPTION_KEY, dan opsional CF_API_TOKEN, CF_ZONE_ID untuk custom hostname.
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tmail_saas",
+      "database_id": "REPLACE_WITH_D1_ID"
+    }
+  ],
+
+  "durable_objects": {
+    "bindings": [{ "name": "MAILBOX", "class_name": "Mailbox" }]
+  },
+
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Mailbox"] }],
+
+  // Poll IMAP tiap menit + cek masa aktif buyer.
+  "triggers": { "crons": ["* * * * *"] },
+
+  "observability": { "enabled": true }
+}
