@@ -45,12 +45,16 @@ export function renderAdminShell(brand: string): string {
       </button>
       <div id="userMenu" class="hidden absolute bottom-14 left-3 right-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
         <a href="#profile" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-user mr-2"></i>Profile</a>
-        <button onclick="toggleDark()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-moon mr-2"></i>Tema Gelap/Terang</button>
         <button id="logoutBtn" class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
       </div>
     </div>
   </aside>
   <main class="flex-1 ml-60">
+    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 flex items-center justify-end gap-4 px-6 sticky top-0 z-10">
+      <button onclick="toggleDark()" title="Tema gelap/terang" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg">
+        <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+      </button>
+    </header>
     <div id="banner"></div>
     <div id="view" class="p-8 max-w-4xl">Memuat…</div>
   </main>
