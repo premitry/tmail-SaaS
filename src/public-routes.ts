@@ -9,7 +9,7 @@ const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
   });
-const html = (b: string) => new Response(b, { headers: { "content-type": "text/html; charset=utf-8" } });
+const html = (b: string) => new Response(b, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 
 function validAddress(addr: string | null, domains: string[]): addr is string {
   if (!addr || !/^[a-z0-9._-]+@[a-z0-9.-]+$/i.test(addr)) return false;

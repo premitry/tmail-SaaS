@@ -21,7 +21,7 @@ export function head(title: string, extra = ""): string {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 <link rel="icon" href="/favicon.svg" />
 <script>
-  (function(){ if(localStorage.getItem('darkmode')==='enabled') document.documentElement.classList.add('dark'); })();
+  (function(){ if(localStorage.getItem('darkmode') !== 'disabled') document.documentElement.classList.add('dark'); })();
   function enableDarkMode(){document.documentElement.classList.add('dark');localStorage.setItem('darkmode','enabled');}
   function disableDarkMode(){document.documentElement.classList.remove('dark');localStorage.setItem('darkmode','disabled');}
   function toggleDark(){document.documentElement.classList.contains('dark')?disableDarkMode():enableDarkMode();}

@@ -12,7 +12,7 @@ const json = (data: unknown, status = 200, headers: Record<string, string> = {})
     status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers },
   });
 const html = (body: string, headers: Record<string, string> = {}) =>
-  new Response(body, { headers: { "content-type": "text/html; charset=utf-8", ...headers } });
+  new Response(body, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", ...headers } });
 
 async function body<T = any>(req: Request): Promise<T> {
   try { return (await req.json()) as T; } catch { return {} as T; }
