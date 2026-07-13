@@ -174,7 +174,7 @@ const LD = CFG.panelDisplay || 'block';
 function setAddrText(){ var ab=$('#addrBox'); if(!ab) return; var sp=ab.querySelector('span'); if(sp){ sp.textContent=addr; } else { ab.textContent=addr; } }
 function showActive(){ $('#createPanel').style.display='none'; $('#activePanel').style.display=LD; setAddrText(); var iw=$('#inboxWrap'); if(iw) iw.style.display=''; }
 function showCreate(){ $('#activePanel').style.display='none'; $('#createPanel').style.display=LD; var iw=$('#inboxWrap'); if(iw) iw.style.display='none'; closeAddrMenu(); }
-function renderAddrMenu(){ var m=$('#addrMenu'); if(!m) return; m.innerHTML = addrs.map(function(a){ return '<div onclick="setActiveAddr(\\''+a+'\\')" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-mono '+(a===addr?'font-bold':'')+'">'+escapeHtml(a)+'</div>'; }).join('') + '<div onclick="showCreate()" class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-indigo-600 cursor-pointer"><i class="fas fa-plus mr-1"></i>Alamat baru</div>'; }
+function renderAddrMenu(){ var m=$('#addrMenu'); if(!m) return; m.innerHTML = addrs.map(function(a){ return '<div onclick="setActiveAddr(\\''+a+'\\')" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-mono '+(a===addr?'font-bold':'')+'">'+escapeHtml(a)+'</div>'; }).join(''); }
 function toggleAddrMenu(){ renderAddrMenu(); var m=$('#addrMenu'); if(m) m.classList.toggle('hidden'); }
 function closeAddrMenu(){ var m=$('#addrMenu'); if(m) m.classList.add('hidden'); }
 function setActiveAddr(a){ addr=a; localStorage.setItem(AKEY,a); setAddrText(); closeAddrMenu(); loadInbox(); connectWS(); }
