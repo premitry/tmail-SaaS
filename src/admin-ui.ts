@@ -1,5 +1,6 @@
 // UI Admin: halaman login + shell SPA (sidebar collapsible) untuk owner & buyer.
 import { head, esc } from "./ui";
+import { DEFAULT_LOGO } from "./assets";
 
 export function renderLogin(brand: string, role: "owner" | "buyer", error = ""): string {
   const title = role === "owner" ? "Owner Panel" : brand + " Admin";
@@ -69,6 +70,7 @@ export function renderAdminShell(brand: string): string {
   </main>
 </div>
 <div id="modalRoot"></div>
+<script>window.DEFAULT_LOGO=${JSON.stringify(DEFAULT_LOGO)};</script>
 <script>
 ${ADMIN_APP_JS}
 </script>
@@ -231,10 +233,10 @@ async function vSettings(){
   const s=await api('/settings'); window.__S=s;
   window.__img={logo:s.logo_url||'',favicon:s.favicon_url||''};
   const lk=JSON.parse(s.lock_json||'{}'); window.__soc=JSON.parse(s.socials_json||'[]');
-  function imgField(kind,label,desc){ const cur=window.__img[kind];
-    return field(label,desc,'<div class="flex items-center gap-3"><img id="'+kind+'Prev" src="'+esc(cur)+'" class="'+(cur?'':'hidden ')+'h-10 bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 p-1 object-contain"/>'+
-      '<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onchange="readImg(this,\''+kind+'\')" class="text-sm"/>'+
-      '<button type="button" onclick="clearImg(\''+kind+'\')" class="text-xs text-red-600">Bawaan TMail</button></div>'); }
+  function imgField(kind,label,desc){ const cur=window.__img[kind]; const shown=cur||window.DEFAULT_LOGO;
+    return field(label,desc,'<div class="flex items-center gap-3"><img id="'+kind+'Prev" src="'+esc(shown)+'" class="h-12 w-auto bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 p-1 object-contain"/>'+
+      '<div class="flex flex-col gap-1"><input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onchange="readImg(this,\''+kind+'\')" class="text-sm"/>'+
+      '<span id="'+kind+'Note" class="text-xs '+(cur?'text-green-600':'text-gray-400')+'">'+(cur?'gambar custom':'bawaan TMail')+' · <button type="button" onclick="clearImg(\''+kind+'\')" class="text-red-600 underline">pakai bawaan</button></span></div></div>'); }
   const dp=durParts(s.delete_after_minutes);
   view.innerHTML='<h1 class="text-2xl font-bold mb-6">Settings</h1>'+
   card('General','Identitas & warna tampilan web publik.',
@@ -280,8 +282,8 @@ async function vSettings(){
 function renderSoc(){ $('#socList').innerHTML=window.__soc.map((x,i)=>'<div class="flex gap-2"><input value="'+esc(x.icon)+'" onchange="window.__soc['+i+'].icon=this.value" placeholder="fab fa-twitter" class="w-40 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><input value="'+esc(x.link)+'" onchange="window.__soc['+i+'].link=this.value" placeholder="https://…" class="flex-1 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><button onclick="window.__soc.splice('+i+',1);renderSoc()" class="text-red-600 px-2">&times;</button></div>').join(''); }
 function addSoc(){ window.__soc.push({icon:'',link:''}); renderSoc(); }
 async function put(patch){ const r=await api('/settings',{method:'POST',body:JSON.stringify(patch)}); if(r.error)alert(r.error); else { toast('Tersimpan'); if(r.settings)window.__S=r.settings; } }
-function readImg(inp,kind){ const f=inp.files[0]; if(!f)return; if(f.size>200000){ alert('Ukuran maksimal 200KB'); inp.value=''; return; } const r=new FileReader(); r.onload=()=>{ window.__img[kind]=r.result; const p=$('#'+kind+'Prev'); if(p){ p.src=r.result; p.classList.remove('hidden'); } }; r.readAsDataURL(f); }
-function clearImg(kind){ window.__img[kind]=''; const p=$('#'+kind+'Prev'); if(p){ p.src=''; p.classList.add('hidden'); } }
+function readImg(inp,kind){ const f=inp.files[0]; if(!f)return; if(f.size>200000){ alert('Ukuran maksimal 200KB'); inp.value=''; return; } const r=new FileReader(); r.onload=()=>{ window.__img[kind]=r.result; const p=$('#'+kind+'Prev'); if(p)p.src=r.result; const n=$('#'+kind+'Note'); if(n){ n.className='text-xs text-green-600'; n.innerHTML='gambar custom · <button type="button" onclick="clearImg(\''+kind+'\')" class="text-red-600 underline">pakai bawaan</button>'; } }; r.readAsDataURL(f); }
+function clearImg(kind){ window.__img[kind]=''; const p=$('#'+kind+'Prev'); if(p)p.src=window.DEFAULT_LOGO; const n=$('#'+kind+'Note'); if(n){ n.className='text-xs text-gray-400'; n.innerHTML='bawaan TMail · <button type="button" onclick="clearImg(\''+kind+'\')" class="text-red-600 underline">pakai bawaan</button>'; } }
 function saveGeneral(){ put({brand_name:$('#g_brand').value,logo_url:window.__img.logo,favicon_url:window.__img.favicon,color_primary:$('#g_c1').value,color_secondary:$('#g_c2').value,color_tertiary:$('#g_c3').value,dark_mode:$('#g_dark').checked?1:0}); }
 function saveImap(){ const p={imap_host:$('#i_host').value,imap_port:+$('#i_port').value,imap_user:$('#i_user').value,imap_tls:$('#i_tls').checked?1:0}; const pw=$('#i_pass').value; if(pw)p.imap_pass=pw; put(p); }
 function saveConfig(){ put({email_limit:+$('#c_limit').value, delete_after_minutes:(+$('#c_delv').value)*(+$('#c_delu').value)}); }
