@@ -33,6 +33,14 @@ function actBtns(mode: string): string {
     `<button data-act="${a}" class="act bg-white/10 dark:bg-black/20 hover:bg-white/25 text-white rounded-md py-4 text-center"><div class="text-2xl"><i class="${i}"></i></div><div class="text-xs mt-2">${l}</div></button>`).join("");
 }
 
+// Dropdown alamat aktif + daftar email lain (multi-email, klik panah utk ganti).
+function addrDropdown(boxCls: string, style = ""): string {
+  return `<div class="relative">
+      <div id="addrBox" onclick="toggleAddrMenu()" class="${boxCls} cursor-pointer flex items-center justify-between"${style ? ` style="${style}"` : ""}><span class="truncate">-</span><i class="fas fa-chevron-down opacity-50 ml-2"></i></div>
+      <div id="addrMenu" class="hidden absolute z-30 mt-1 left-0 right-0 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-md shadow-lg overflow-hidden max-h-60 overflow-y-auto text-sm"></div>
+    </div>`;
+}
+
 export function renderPublicPage(o: PublicOpts): string {
   const c = o.colors;
   const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : "sidebar";
@@ -49,14 +57,8 @@ export function renderPublicPage(o: PublicOpts): string {
   const statusEl = `<span id="statusDot" class="text-xs text-gray-400"><i class="fas fa-circle text-[8px]"></i> <span id="statusText">idle</span></span>`;
 
   const inboxArea = `
-    <div id="inboxList" class="w-full lg:w-1/3 border-r border-gray-200 dark:border-gray-800 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 min-h-[320px]">
-      <div class="h-40 flex items-center justify-center text-gray-400 text-lg">Buat alamat dulu</div>
-    </div>
-    <div id="msgView" class="w-full lg:w-2/3 flex flex-col min-h-[320px]">
-      <div class="flex-1 flex items-center justify-center text-gray-300 dark:text-gray-600">
-        <div class="text-center"><div class="text-6xl mb-3"><i class="far fa-envelope-open"></i></div><div>Pilih email untuk dibaca</div></div>
-      </div>
-    </div>`;
+    <div id="inboxList" class="w-full lg:w-1/3 border-r border-gray-200 dark:border-gray-800 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 min-h-[320px]"></div>
+    <div id="msgView" class="w-full lg:w-2/3 flex flex-col min-h-[320px]"></div>`;
 
   const footer = `<footer class="bg-gray-800 text-white text-sm px-6 py-4 text-center">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>`;
 
@@ -74,14 +76,14 @@ export function renderPublicPage(o: PublicOpts): string {
       <button id="btnRandom" class="w-full rounded-md py-3 px-4 text-white font-semibold" style="background-color:${c.tertiary}">Random</button>
     </div>
     <div id="activePanel" class="lg:max-w-xs lg:mx-auto w-full space-y-4 hidden">
-      <div id="addrBox" class="rounded-md py-3 px-4 bg-white/10 dark:bg-black/20 text-white font-mono text-sm break-all">-</div>
+      ${addrDropdown("rounded-md py-3 px-4 bg-white/10 dark:bg-black/20 text-white font-mono text-sm break-all")}
       <div class="grid grid-cols-4 lg:grid-cols-2 gap-2 lg:gap-4">${actBtns("sidebar")}</div>
     </div>
     <div class="mt-auto pt-8 flex justify-center">${socials}</div>
   </aside>
   <div class="flex-1 flex flex-col min-w-0">
     <nav class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-5 h-16 flex items-center justify-end gap-4">${statusEl}${darkBtn}</nav>
-    <main class="flex-1 lg:flex bg-white dark:bg-gray-900">${inboxArea}</main>
+    <main class="flex-1 lg:flex bg-white dark:bg-gray-900" id="inboxWrap" style="display:none">${inboxArea}</main>
     ${footer}
   </div>
 </div>`;
@@ -109,14 +111,14 @@ export function renderPublicPage(o: PublicOpts): string {
       <div id="activePanel" class="hidden flex-col md:flex-row items-stretch gap-4">
         <div class="flex-1 w-full space-y-3">
           <h2 class="text-center text-xl font-bold mb-1">Alamat email sementara kamu siap</h2>
-          <div id="addrBox" class="w-full py-4 px-5 border-b-4 font-mono break-all flex items-center justify-between ${inputCls}" style="border-color:${c.secondary}"><span>-</span><i class="fas fa-chevron-down opacity-40"></i></div>
+          ${addrDropdown("w-full py-4 px-5 border-b-4 font-mono break-all " + inputCls, "border-color:" + c.secondary)}
         </div>
         <div class="grid grid-cols-4 md:grid-cols-1 gap-0.5 md:w-32">${actBtns("mantis")}</div>
       </div>
     </div>
   </div>
   <main class="container mx-auto flex-1 p-5 w-full">
-    <div class="lg:flex bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">${inboxArea}</div>
+    <div class="lg:flex bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm" id="inboxWrap" style="display:none">${inboxArea}</div>
   </main>
   ${footer}
 </div>`;
@@ -141,13 +143,13 @@ export function renderPublicPage(o: PublicOpts): string {
         <div class="flex justify-center"><button id="btnRandom" class="py-2 px-6 rounded-md text-white font-semibold" style="background-color:${c.tertiary}">Buat Email Acak</button></div>
       </div>
       <div id="activePanel" class="hidden max-w-3xl mx-auto">
-        <div id="addrBox" class="w-full bg-white/10 rounded-md py-4 px-5 text-white font-mono break-all flex items-center justify-between"><span>-</span><i class="fas fa-chevron-down opacity-50"></i></div>
+        ${addrDropdown("w-full bg-white/10 rounded-md py-4 px-5 text-white font-mono break-all")}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">${actBtns("nebula")}</div>
       </div>
     </div>
   </header>
   <div class="container mx-auto px-4 -mt-16 mb-8 relative z-10 flex-1">
-    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden lg:flex">${inboxArea}</div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden lg:flex" id="inboxWrap" style="display:none">${inboxArea}</div>
   </div>
   <footer class="bg-gray-800 text-white text-sm px-6 pt-14 pb-6 text-center -mt-6">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>
 </div>`;
@@ -158,8 +160,9 @@ export function renderPublicPage(o: PublicOpts): string {
 ${bodyHtml}
 <script>
 const CFG = ${config};
-const HOST = location.host, AKEY = 'tmail_addr_' + HOST;
-let addr = localStorage.getItem(AKEY) || '';
+const HOST = location.host, AKEY = 'tmail_addr_' + HOST, LKEY = 'tmail_addrs_' + HOST;
+let addrs = JSON.parse(localStorage.getItem(LKEY) || '[]');
+let addr = localStorage.getItem(AKEY) || (addrs[0] || '');
 let ws = null, currentId = null;
 const TENANT = new URLSearchParams(location.search).get('__tenant');
 const TQS = TENANT ? '__tenant=' + encodeURIComponent(TENANT) : '';
@@ -168,14 +171,20 @@ const $ = (s) => document.querySelector(s);
 function status(txt, color){ $('#statusText').textContent = txt; $('#statusDot').className = 'text-xs ' + (color||'text-gray-400'); }
 async function api(path, opts){ const r = await fetch(apiUrl(path), opts); return r.json(); }
 const LD = CFG.panelDisplay || 'block';
-function showActive(){ $('#createPanel').style.display='none'; $('#activePanel').style.display=LD; var ab=$('#addrBox'), sp=ab.querySelector('span'); if(sp){ sp.textContent=addr; } else { ab.textContent=addr; } }
-function showCreate(){ $('#activePanel').style.display='none'; $('#createPanel').style.display=LD; }
+function setAddrText(){ var ab=$('#addrBox'); if(!ab) return; var sp=ab.querySelector('span'); if(sp){ sp.textContent=addr; } else { ab.textContent=addr; } }
+function showActive(){ $('#createPanel').style.display='none'; $('#activePanel').style.display=LD; setAddrText(); var iw=$('#inboxWrap'); if(iw) iw.style.display=''; }
+function showCreate(){ $('#activePanel').style.display='none'; $('#createPanel').style.display=LD; var iw=$('#inboxWrap'); if(iw) iw.style.display='none'; closeAddrMenu(); }
+function renderAddrMenu(){ var m=$('#addrMenu'); if(!m) return; m.innerHTML = addrs.map(function(a){ return '<div onclick="setActiveAddr(\\''+a+'\\')" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-mono '+(a===addr?'font-bold':'')+'">'+escapeHtml(a)+'</div>'; }).join('') + '<div onclick="showCreate()" class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-indigo-600 cursor-pointer"><i class="fas fa-plus mr-1"></i>Alamat baru</div>'; }
+function toggleAddrMenu(){ renderAddrMenu(); var m=$('#addrMenu'); if(m) m.classList.toggle('hidden'); }
+function closeAddrMenu(){ var m=$('#addrMenu'); if(m) m.classList.add('hidden'); }
+function setActiveAddr(a){ addr=a; localStorage.setItem(AKEY,a); setAddrText(); closeAddrMenu(); loadInbox(); connectWS(); }
 async function createAddr(local){
   const domain = $('#domain').value;
   const q = new URLSearchParams({ domain }); if(local) q.set('local', local);
   const res = await api('/new?' + q.toString());
   if(res.error){ alert(res.error); return; }
-  addr = res.address; localStorage.setItem(AKEY, addr);
+  addr = res.address; if(addrs.indexOf(addr)<0) addrs.push(addr);
+  localStorage.setItem(AKEY, addr); localStorage.setItem(LKEY, JSON.stringify(addrs));
   showActive(); loadInbox(); connectWS();
 }
 function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60)return s+'d lalu'; if(s<3600)return Math.floor(s/60)+'m lalu'; if(s<86400)return Math.floor(s/3600)+'j lalu'; return Math.floor(s/86400)+'h lalu'; }
@@ -184,7 +193,7 @@ async function loadInbox(){
   const res = await api('/inbox?a=' + encodeURIComponent(addr));
   const list = $('#inboxList'); const msgs = res.messages || [];
   status(msgs.length + ' email', 'text-green-500');
-  if(!msgs.length){ list.innerHTML = '<div class="h-40 flex items-center justify-center text-gray-400 text-lg">Inbox kosong</div>'; return; }
+  if(!msgs.length){ list.innerHTML = '<div class="h-40 flex items-center justify-center text-gray-400">Menunggu email masuk…</div>'; return; }
   list.innerHTML = msgs.map(m => '<div class="p-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 '+(m.read?'':'font-semibold')+'" onclick="openMsg(\\''+m.id+'\\')">'+
     '<div class="flex justify-between gap-2"><div class="text-sm text-gray-800 dark:text-gray-200 truncate">'+escapeHtml(m.sender)+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+timeAgo(m.received_at)+'</div></div>'+
     '<div class="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">'+escapeHtml(m.subject)+'</div>'+
