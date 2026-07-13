@@ -63,6 +63,14 @@ export class DB {
   async setName(id: string, name: string): Promise<void> {
     await this.d1.prepare(`UPDATE users SET name = ? WHERE id = ?`).bind(name, id).run();
   }
+  async setEmail(id: string, email: string): Promise<{ ok: boolean; error?: string }> {
+    const e = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return { ok: false, error: "email tidak valid" };
+    const dup = await this.d1.prepare(`SELECT id FROM users WHERE email = ? AND id != ?`).bind(e, id).first();
+    if (dup) return { ok: false, error: "email sudah dipakai" };
+    await this.d1.prepare(`UPDATE users SET email = ? WHERE id = ?`).bind(e, id).run();
+    return { ok: true };
+  }
   async deleteBuyer(id: string): Promise<void> {
     await this.d1.batch([
       this.d1.prepare(`DELETE FROM users WHERE id = ? AND role = 'buyer'`).bind(id),
@@ -92,7 +100,7 @@ export class DB {
     const allowed = [
       "imap_host", "imap_port", "imap_user", "imap_pass_enc", "imap_tls", "imap_last_uid",
       "brand_name", "logo_url", "color_primary", "color_secondary", "color_tertiary",
-      "theme", "lang", "dark_mode", "email_limit", "socials_json", "lock_json",
+      "theme", "lang", "dark_mode", "email_limit", "delete_after_minutes", "socials_json", "lock_json",
     ];
     const keys = Object.keys(patch).filter((k) => allowed.includes(k));
     if (!keys.length) return;
@@ -254,6 +262,45 @@ export class DB {
       out.push({ buyer, settings: s, domains });
     }
     return out;
+  }
+
+  /* ─────────── messages (inbox gabungan) ─────────── */
+  async logMessage(buyerId: string, to: string, from: string, subject: string, preview: string, html: string, text: string): Promise<void> {
+    await this.d1.prepare(
+      `INSERT INTO messages (id, buyer_id, to_addr, from_addr, subject, preview, html, text, received_at, seen)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`)
+      .bind(uid(), buyerId, to, from, subject, preview, html, text, Date.now()).run();
+  }
+  async listMessages(buyerId: string, q: string, limit: number, offset: number): Promise<{ rows: any[]; total: number }> {
+    const like = "%" + q.trim() + "%";
+    const where = q.trim()
+      ? `buyer_id = ? AND (subject LIKE ? OR from_addr LIKE ? OR to_addr LIKE ? OR preview LIKE ?)`
+      : `buyer_id = ?`;
+    const args = q.trim() ? [buyerId, like, like, like, like] : [buyerId];
+    const total = await this.d1.prepare(`SELECT COUNT(*) AS c FROM messages WHERE ${where}`).bind(...args).first<{ c: number }>();
+    const rows = await this.d1.prepare(
+      `SELECT id, to_addr, from_addr, subject, preview, received_at, seen FROM messages WHERE ${where} ORDER BY received_at DESC LIMIT ? OFFSET ?`)
+      .bind(...args, limit, offset).all();
+    return { rows: rows.results ?? [], total: total?.c ?? 0 };
+  }
+  async getMessage(buyerId: string, id: string): Promise<any> {
+    const row = await this.d1.prepare(`SELECT * FROM messages WHERE id = ? AND buyer_id = ?`).bind(id, buyerId).first();
+    if (row) await this.d1.prepare(`UPDATE messages SET seen = 1 WHERE id = ?`).bind(id).run();
+    return row;
+  }
+  async deleteMessage(buyerId: string, id: string): Promise<void> {
+    await this.d1.prepare(`DELETE FROM messages WHERE id = ? AND buyer_id = ?`).bind(id, buyerId).run();
+  }
+  async unseenCount(buyerId: string): Promise<number> {
+    const r = await this.d1.prepare(`SELECT COUNT(*) AS c FROM messages WHERE buyer_id = ? AND seen = 0`).bind(buyerId).first<{ c: number }>();
+    return r?.c ?? 0;
+  }
+  async gcAllMessages(): Promise<void> {
+    await this.d1.prepare(
+      `DELETE FROM messages WHERE rowid IN (
+         SELECT m.rowid FROM messages m JOIN buyer_settings bs ON bs.buyer_id = m.buyer_id
+         WHERE bs.delete_after_minutes > 0 AND m.received_at < ? - bs.delete_after_minutes * 60000)`)
+      .bind(Date.now()).run();
   }
 
   // Cek masa aktif: tandai expired yang lewat; kembalikan yang ≤ 3 hari untuk notif.

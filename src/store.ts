@@ -1,5 +1,6 @@
 // Helper penyimpanan inbox + util bersama.
 import type { Env, StoredEmail } from "./types";
+import type { DB } from "./db";
 
 const ADJ = ["swift", "calm", "bold", "lucky", "cool", "neo", "zen", "epic", "rapid", "sunny", "vivid", "mega"];
 const NOUN = ["fox", "wolf", "hawk", "koi", "lynx", "otter", "raven", "puma", "tiger", "panda", "gecko", "orca"];
@@ -31,18 +32,22 @@ export function inboxStub(env: Env, address: string): MailboxStub {
   return ns.get(ns.idFromName(address.toLowerCase())) as unknown as MailboxStub;
 }
 
-/** Simpan hasil parse email ke Mailbox DO milik `address`. */
+/** Simpan hasil parse email ke Mailbox DO milik `address`, dan (opsional) log ke D1 untuk Inbox buyer. */
 export async function storeParsed(
   env: Env,
   address: string,
   parsed: { from?: { address?: string; name?: string }; subject?: string; text?: string; html?: string },
   fallbackSender: string,
+  db?: DB,
+  buyerId?: string,
 ): Promise<void> {
   const text = parsed.text || "";
   const html = parsed.html || "";
   const preview = (text || stripHtml(html)).replace(/\s+/g, " ").trim().slice(0, 140);
   const sender = parsed.from?.address || fallbackSender;
-  await inboxStub(env, address).store({
-    sender, subject: parsed.subject || "(tanpa subjek)", preview, text, html,
-  });
+  const subject = parsed.subject || "(tanpa subjek)";
+  await inboxStub(env, address).store({ sender, subject, preview, text, html });
+  if (db && buyerId) {
+    try { await db.logMessage(buyerId, address, sender, subject, preview, html, text); } catch { /* jangan gagalkan */ }
+  }
 }

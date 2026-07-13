@@ -85,6 +85,21 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
   }
   if (path === "/dashboard") return json(await db.getStats(buyerId, parseInt(url.searchParams.get("days") || "14", 10)));
 
+  if (path === "/inbox" && req.method === "GET") {
+    const q = url.searchParams.get("q") || "";
+    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+    const limit = 20;
+    const { rows, total } = await db.listMessages(buyerId, q, limit, (page - 1) * limit);
+    return json({ messages: rows, total, page, pages: Math.max(1, Math.ceil(total / limit)) });
+  }
+  if (path === "/inbox/msg") {
+    const m = await db.getMessage(buyerId, url.searchParams.get("id") || "");
+    return m ? json(m) : json({ error: "tidak ditemukan" }, 404);
+  }
+  if (path === "/inbox/delete" && req.method === "POST") {
+    const b = await body(req); await db.deleteMessage(buyerId, b.id); return json({ ok: true });
+  }
+
   if (path === "/domains" && req.method === "GET") return json({ domains: await db.listDomains(buyerId) });
   if (path === "/domains" && req.method === "POST") {
     const b = await body(req); return json(await db.addDomain(buyerId, b.domain || ""));
@@ -102,7 +117,7 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
     const patch: any = {};
     const str = ["brand_name", "logo_url", "color_primary", "color_secondary", "color_tertiary", "theme", "lang", "imap_host", "imap_user", "socials_json", "lock_json"];
     for (const k of str) if (b[k] !== undefined) patch[k] = String(b[k]);
-    for (const k of ["dark_mode", "imap_tls", "imap_port", "email_limit"]) if (b[k] !== undefined) patch[k] = Number(b[k]);
+    for (const k of ["dark_mode", "imap_tls", "imap_port", "email_limit", "delete_after_minutes"]) if (b[k] !== undefined) patch[k] = Number(b[k]);
     if (b.imap_pass) patch.imap_pass_enc = await encryptSecret(env, String(b.imap_pass));
     if (patch.theme && !["default", "mantis", "nebula"].includes(patch.theme)) delete patch.theme;
     if (patch.lang && !["id", "en"].includes(patch.lang)) delete patch.lang;
@@ -171,6 +186,18 @@ async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
       await db.addHostname(buyer.id, String(b.hostname), prov.cfId, prov.status);
     }
     return json({ ok: true, id: buyer.id });
+  }
+  if (path === "/buyers/update" && req.method === "POST") {
+    const b = await body(req);
+    const u = await db.getUserById(b.id);
+    if (!u || u.role !== "buyer") return json({ error: "buyer tidak ditemukan" });
+    if (b.email !== undefined && b.email !== u.email) {
+      const r = await db.setEmail(b.id, String(b.email));
+      if (!r.ok) return json({ error: r.error });
+    }
+    if (b.name !== undefined) await db.setName(b.id, String(b.name).slice(0, 60));
+    if (b.password) await db.setPassword(b.id, String(b.password));
+    return json({ ok: true });
   }
   if (path === "/buyers/expiry") {
     const b = await body(req);

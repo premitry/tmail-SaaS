@@ -1,4 +1,4 @@
-// UI Admin: halaman login + shell SPA (sidebar) untuk owner & buyer.
+// UI Admin: halaman login + shell SPA (sidebar collapsible) untuk owner & buyer.
 import { head, esc } from "./ui";
 
 export function renderLogin(brand: string, role: "owner" | "buyer", error = ""): string {
@@ -19,7 +19,6 @@ export function renderLogin(brand: string, role: "owner" | "buyer", error = ""):
     document.getElementById('f').onsubmit = async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      // bawa ?__tenant= (tes via IP) ke request login
       const r = await fetch('/admin/login' + location.search, { method:'POST', headers:{'content-type':'application/json'},
         body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }) });
       const d = await r.json();
@@ -30,18 +29,26 @@ export function renderLogin(brand: string, role: "owner" | "buyer", error = ""):
 </body></html>`;
 }
 
+const SB_STYLE = `<style>
+#sb{transition:width .15s}
+.sbc #sb{width:4rem}
+.sbc #sb .lbl,.sbc #sb #brandName,.sbc #sb #userName{display:none}
+.sbc #sb .navlink,.sbc #sb #userBtn{justify-content:center}
+.sbc main{margin-left:4rem}
+</style>`;
+
 export function renderAdminShell(brand: string): string {
-  return `${head(brand + " — Admin")}
+  return `${head(brand + " — Admin", SB_STYLE)}
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 <div class="flex min-h-screen">
-  <aside class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 z-20">
-    <div class="h-16 flex items-center gap-2 px-6 border-b border-gray-200 dark:border-gray-800 font-bold text-lg">
-      <span class="text-2xl">📮</span><span id="brandName">${esc(brand)}</span>
+  <aside id="sb" class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 z-20">
+    <div class="h-16 flex items-center gap-2 px-4 border-b border-gray-200 dark:border-gray-800 font-bold text-lg overflow-hidden">
+      <span class="text-2xl">📮</span><span id="brandName" class="truncate">${esc(brand)}</span>
     </div>
     <nav id="nav" class="flex-1 p-3 space-y-1 text-sm"></nav>
     <div class="p-3 border-t border-gray-200 dark:border-gray-800 text-sm relative">
       <button id="userBtn" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-        <i class="fas fa-user-circle text-lg"></i><span id="userName" class="truncate">-</span><i class="fas fa-chevron-up ml-auto text-xs"></i>
+        <i class="fas fa-user-circle text-lg"></i><span id="userName" class="truncate">-</span>
       </button>
       <div id="userMenu" class="hidden absolute bottom-14 left-3 right-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
         <a href="#profile" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-user mr-2"></i>Profile</a>
@@ -50,7 +57,9 @@ export function renderAdminShell(brand: string): string {
     </div>
   </aside>
   <main class="flex-1 ml-60">
-    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 flex items-center justify-end gap-4 px-6 sticky top-0 z-10">
+    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 px-5 sticky top-0 z-10">
+      <button onclick="toggleSidebar()" title="Kecilkan / lebarkan sidebar" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fas fa-bars"></i></button>
+      <div class="ml-auto"></div>
       <button onclick="toggleDark()" title="Tema gelap/terang" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg">
         <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
       </button>
@@ -66,12 +75,11 @@ ${ADMIN_APP_JS}
 </body></html>`;
 }
 
-// ── SPA client (vanilla JS, tanpa backtick / ${} karena String.raw) ──
 const ADMIN_APP_JS = String.raw`
 let ME = null;
 const $ = (s,r=document)=>r.querySelector(s);
 const view = $('#view');
-const QS = location.search; // bawa ?__tenant= saat tes via IP
+const QS = location.search;
 
 async function api(path, opts){
   const sep = path.indexOf('?')>=0 ? '&' : '?';
@@ -82,6 +90,11 @@ async function api(path, opts){
 }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(m){ const d=document.createElement('div'); d.textContent=m; d.className='fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50'; document.body.appendChild(d); setTimeout(()=>d.remove(),2000); }
+function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60)return s+'d'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'j'; return Math.floor(s/86400)+'h'; }
+
+/* ---- sidebar collapse ---- */
+function toggleSidebar(){ document.body.classList.toggle('sbc'); localStorage.setItem('sbc', document.body.classList.contains('sbc')?'1':'0'); }
+if(localStorage.getItem('sbc')==='1') document.body.classList.add('sbc');
 
 /* ---- komponen kecil ---- */
 const INP = 'w-full max-w-md rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500';
@@ -89,18 +102,19 @@ function inp(id,val,type,ph){ return '<input id="'+id+'" type="'+(type||'text')+
 function field(label,desc,inner){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label>'+(desc?'<p class="text-xs text-gray-400 mb-1.5">'+desc+'</p>':'<div class="mb-1.5"></div>')+inner+'</div>'; }
 function card(title,desc,inner){ return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-5"><h3 class="font-semibold">'+title+'</h3>'+(desc?'<p class="text-xs text-gray-400 mb-4">'+desc+'</p>':'<div class="mb-4"></div>')+inner+'</div>'; }
 function saveBtn(fn){ return '<button onclick="'+fn+'" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg mt-1">Simpan</button>'; }
-function openModal(inner){ $('#modalRoot').innerHTML = '<div class="fixed inset-0 bg-black/50 z-40 flex items-start justify-center p-4 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 mt-16">'+inner+'</div></div>'; }
+function toggle(id,checked,label){ return '<label class="inline-flex items-center gap-3 cursor-pointer"><input id="'+id+'" type="checkbox" class="sr-only peer" '+(checked?'checked':'')+'/><span class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-checked:bg-indigo-600 rounded-full relative transition-colors after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></span>'+(label?'<span class="text-sm">'+label+'</span>':'')+'</label>'; }
+function openModal(inner,wide){ $('#modalRoot').innerHTML = '<div class="fixed inset-0 bg-black/50 z-40 flex items-start justify-center p-4 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white dark:bg-gray-800 w-full '+(wide?'max-w-2xl':'max-w-md')+' rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 mt-12">'+inner+'</div></div>'; }
 function closeModal(){ $('#modalRoot').innerHTML=''; }
 
 const NAV = {
   owner: [ ['#users','Users','fa-users'] ],
-  buyer: [ ['#dashboard','Dashboard','fa-gauge-high'], ['#domains','Domains','fa-globe'], ['#settings','Settings','fa-gear'] ],
+  buyer: [ ['#dashboard','Dashboard','fa-gauge-high'], ['#inbox','Inbox','fa-inbox'], ['#domains','Domains','fa-globe'], ['#settings','Settings','fa-gear'] ],
 };
 function renderNav(){
   const items = NAV[ME.role] || [];
-  $('#nav').innerHTML = items.map(x=>'<a href="'+x[0]+QS+'" class="navlink flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-h="'+x[0]+'"><i class="fas '+x[2]+' w-4"></i>'+x[1]+'</a>').join('');
+  $('#nav').innerHTML = items.map(x=>'<a href="'+x[0]+QS+'" title="'+x[1]+'" class="navlink flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-h="'+x[0]+'"><i class="fas '+x[2]+' w-4 text-center"></i><span class="lbl">'+x[1]+'</span></a>').join('');
 }
-function setActive(hash){ document.querySelectorAll('.navlink').forEach(a=>{ const on=a.dataset.h===hash; a.classList.toggle('bg-indigo-50',on); a.classList.toggle('dark:bg-gray-800',on); a.classList.toggle('text-indigo-600',on); a.classList.toggle('font-semibold',on); }); }
+function setActive(hash){ document.querySelectorAll('.navlink').forEach(a=>{ const on=a.dataset.h===hash; a.classList.toggle('bg-indigo-50',on); a.classList.toggle('dark:bg-gray-700',on); a.classList.toggle('text-indigo-600',on); a.classList.toggle('font-semibold',on); }); }
 
 function expiryBanner(){
   if(ME.role!=='buyer') return;
@@ -111,10 +125,10 @@ function expiryBanner(){
   }
 }
 
-/* ============ DASHBOARD (buyer) + grafik ============ */
-function chartSVG(series){
-  if(!series||!series.length) return '<div class="text-gray-400 text-sm py-12 text-center">Belum ada data grafik</div>';
-  const w=620,h=210,pad=32,n=series.length; let max=1;
+/* ============ grafik garis ============ */
+function chartSVG(series,H){
+  if(!series||!series.length) return '<div class="text-gray-400 text-sm py-10 text-center">Belum ada data grafik</div>';
+  const w=620,h=H||210,pad=32,n=series.length; let max=1;
   series.forEach(s=>{ max=Math.max(max,s.emails_created,s.messages_received); });
   const X=i=> n===1 ? pad+(w-pad*2)/2 : pad+(w-pad*2)*i/(n-1);
   const Y=v=> h-pad-(v/max)*(h-pad*2);
@@ -132,7 +146,8 @@ function chartSVG(series){
   return '<svg viewBox="0 0 '+w+' '+h+'" class="w-full">'+g+lineOf('emails_created','#4f46e5')+lineOf('messages_received','#22c55e')+xl+'</svg>'+
     '<div class="flex gap-4 justify-center text-xs text-gray-500 mt-2"><span><i class="fas fa-minus text-indigo-500"></i> Email dibuat</span><span><i class="fas fa-minus text-green-500"></i> Pesan diterima</span></div>';
 }
-function toggle(id,checked,label){ return '<label class="inline-flex items-center gap-3 cursor-pointer"><input id="'+id+'" type="checkbox" class="sr-only peer" '+(checked?'checked':'')+'/><span class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-checked:bg-indigo-600 rounded-full relative transition-colors after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></span>'+(label?'<span class="text-sm">'+label+'</span>':'')+'</label>'; }
+
+/* ============ DASHBOARD ============ */
 async function vDashboard(){
   view.innerHTML='<h1 class="text-2xl font-bold mb-6">Dashboard</h1><div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>'+
     '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5">'+
@@ -141,19 +156,56 @@ async function vDashboard(){
           '<option value="7">7 hari</option><option value="14" selected>14 hari</option><option value="30">30 hari</option><option value="60">60 hari</option><option value="90">90 hari</option>'+
         '</select></div>'+
       '<p class="text-xs text-gray-400 mb-3">Jumlah email dibuat & pesan diterima per hari.</p>'+
-      '<div id="chartBody" class="text-gray-400 text-sm py-12 text-center">Memuat…</div></div>';
+      '<div id="chartBody" class="text-gray-400 text-sm py-10 text-center">Memuat…</div></div>';
   const d=await api('/dashboard');
   const cards=[['Email dibuat',d.emails,'fa-at','text-indigo-600'],['Pesan diterima',d.messages,'fa-inbox','text-green-600'],['Domain',d.domains,'fa-globe','text-purple-600'],['Hari ini',(d.series&&d.series.length?d.series[d.series.length-1].messages_received:0),'fa-bolt','text-amber-600']];
   $('#cards').innerHTML=cards.map(c=>'<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5"><div class="'+c[3]+' text-xl mb-2"><i class="fas '+c[2]+'"></i></div><div class="text-3xl font-bold">'+(c[1]||0)+'</div><div class="text-sm text-gray-500 mt-1">'+c[0]+'</div></div>').join('');
   $('#chartBody').innerHTML=chartSVG(d.series);
 }
-async function loadChart(days){
-  const el=$('#chartBody'); if(el) el.innerHTML='<div class="py-12 text-center text-gray-400 text-sm">Memuat…</div>';
-  const d=await api('/dashboard?days='+days);
-  if($('#chartBody')) $('#chartBody').innerHTML=chartSVG(d.series);
-}
+async function loadChart(days){ const el=$('#chartBody'); if(el)el.innerHTML='<div class="py-10 text-center text-gray-400 text-sm">Memuat…</div>'; const d=await api('/dashboard?days='+days); if($('#chartBody'))$('#chartBody').innerHTML=chartSVG(d.series); }
 
-/* ============ DOMAINS (card) ============ */
+/* ============ INBOX (gabungan + search + popup) ============ */
+let inbState={page:1,q:''};
+function vInbox(){
+  view.innerHTML='<h1 class="text-2xl font-bold mb-2">Inbox</h1><p class="text-sm text-gray-400 mb-4">Semua email masuk dari seluruh alamat & domainmu.</p>'+
+    '<div class="relative max-w-md mb-4"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>'+
+    '<input id="inbQ" placeholder="Cari subjek / pengirim / alamat…" class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></div>'+
+    '<div id="inbList" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800"></div>'+
+    '<div id="inbPage" class="flex items-center justify-between mt-3 text-sm text-gray-500"></div>';
+  let t; $('#inbQ').oninput=(e)=>{ clearTimeout(t); t=setTimeout(()=>{ inbState.q=e.target.value; inbState.page=1; loadInbox(); },300); };
+  loadInbox();
+}
+async function loadInbox(){
+  const d=await api('/inbox?page='+inbState.page+'&q='+encodeURIComponent(inbState.q));
+  const rows=d.messages||[];
+  $('#inbList').innerHTML = rows.length ? rows.map(m=>
+    '<div class="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40 '+(m.seen?'':'bg-indigo-50/40 dark:bg-gray-700/20')+'" onclick="openMsg(\''+m.id+'\')">'+
+      '<div class="flex justify-between gap-3"><div class="font-medium truncate '+(m.seen?'':'font-semibold')+'">'+esc(m.from_addr)+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+timeAgo(m.received_at)+'</div></div>'+
+      '<div class="text-sm truncate">'+esc(m.subject||'(tanpa subjek)')+'</div>'+
+      '<div class="text-xs text-gray-400 truncate">ke: '+esc(m.to_addr)+' · '+esc(m.preview||'')+'</div></div>'
+  ).join('') : '<div class="p-8 text-center text-gray-400">Belum ada email</div>';
+  $('#inbPage').innerHTML = '<span>'+(d.total||0)+' email · hal '+(d.page||1)+'/'+(d.pages||1)+'</span>'+
+    '<span class="flex gap-2">'+
+      '<button onclick="inbPage(-1)" '+((d.page||1)<=1?'disabled':'')+' class="px-3 py-1 border dark:border-gray-700 rounded disabled:opacity-40">Prev</button>'+
+      '<button onclick="inbPage(1)" '+((d.page||1)>=(d.pages||1)?'disabled':'')+' class="px-3 py-1 border dark:border-gray-700 rounded disabled:opacity-40">Next</button></span>';
+}
+function inbPage(delta){ inbState.page=Math.max(1,inbState.page+delta); loadInbox(); }
+async function openMsg(id){
+  const m=await api('/inbox/msg?id='+id);
+  if(m.error){ alert(m.error); return; }
+  const dt=new Date(m.received_at).toLocaleString();
+  const bodyHtml = m.html ? m.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px;margin:0">'+esc(m.text||'')+'</pre>';
+  openModal(
+    '<div class="flex justify-between items-start gap-3 mb-3"><h3 class="text-lg font-bold min-w-0 truncate">'+esc(m.subject||'(tanpa subjek)')+'</h3><button onclick="closeModal()" class="text-2xl leading-none text-gray-400">&times;</button></div>'+
+    '<div class="text-xs text-gray-500 space-y-0.5 mb-3 border-b border-gray-100 dark:border-gray-700 pb-3">'+
+      '<div><b>Dari:</b> '+esc(m.from_addr)+'</div><div><b>Ke:</b> '+esc(m.to_addr)+'</div><div><b>Tanggal:</b> '+esc(dt)+'</div></div>'+
+    '<iframe sandbox="allow-same-origin" class="w-full h-96 bg-white rounded-lg border border-gray-200 dark:border-gray-700" srcdoc="'+esc(bodyHtml)+'"></iframe>'+
+    '<div class="flex justify-end mt-3"><button onclick="delMsg(\''+id+'\')" class="text-sm bg-red-600 text-white px-4 py-2 rounded-lg">Hapus</button></div>',
+    true);
+}
+async function delMsg(id){ await api('/inbox/delete',{method:'POST',body:JSON.stringify({id})}); closeModal(); loadInbox(); }
+
+/* ============ DOMAINS ============ */
 async function vDomains(){
   view.innerHTML='<h1 class="text-2xl font-bold mb-2">Domains</h1><p class="text-sm text-gray-400 mb-5">Semua domain otomatis pakai IMAP di Settings. Arahkan MX domain ke mailbox catch-all IMAP-mu.</p>'+
     '<div class="flex gap-2 mb-6 max-w-md"><input id="newDomain" placeholder="contoh.com" class="flex-1 '+INP+'"/><button id="addDomain" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-lg">Tambah</button></div>'+
@@ -173,11 +225,12 @@ async function loadDomains(){
 async function toggleDomain(id,a){ await api('/domains/toggle',{method:'POST',body:JSON.stringify({id,active:!!a})}); loadDomains(); }
 async function delDomain(id){ if(confirm('Hapus domain?')){ await api('/domains/delete',{method:'POST',body:JSON.stringify({id})}); loadDomains(); } }
 
-/* ============ SETTINGS (semua ke bawah + keterangan) ============ */
+/* ============ SETTINGS ============ */
+function durParts(min){ min=+min||0; if(min>0&&min%1440===0)return{v:min/1440,u:1440}; if(min>0&&min%60===0)return{v:min/60,u:60}; return{v:min,u:1}; }
 async function vSettings(){
   const s=await api('/settings'); window.__S=s;
   const lk=JSON.parse(s.lock_json||'{}'); window.__soc=JSON.parse(s.socials_json||'[]');
-  let hostsInfo='';
+  const dp=durParts(s.delete_after_minutes);
   view.innerHTML='<h1 class="text-2xl font-bold mb-6">Settings</h1>'+
   card('General','Identitas & warna tampilan web publik.',
     field('Nama Aplikasi','Nama brand yang tampil di web & admin.',inp('g_brand',s.brand_name))+
@@ -191,8 +244,11 @@ async function vSettings(){
     field('Username','User login mailbox.',inp('i_user',s.imap_user))+
     field('Password',(s.has_imap_pass?'Sudah tersimpan — kosongkan jika tak ingin ganti.':'Password mailbox (dienkripsi).'),'<input id="i_pass" type="password" placeholder="'+(s.has_imap_pass?'••••••':'')+'" class="'+INP+'"/>')+
     saveBtn('saveImap()'))+
-  card('Configuration','Aturan pembuatan alamat.',
+  card('Configuration','Aturan pembuatan alamat & penyimpanan email.',
     field('Batas alamat / pengunjung','Maksimum alamat aktif per pengunjung.','<input id="c_limit" type="number" value="'+esc(s.email_limit)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+
+    field('Hapus email otomatis setelah','Email di Inbox dihapus setelah durasi ini. 0 = simpan selamanya.',
+      '<div class="flex gap-2 items-center"><input id="c_delv" type="number" min="0" value="'+dp.v+'" class="w-28 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>'+
+      '<select id="c_delu" class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"><option value="1" '+(dp.u===1?'selected':'')+'>Menit</option><option value="60" '+(dp.u===60?'selected':'')+'>Jam</option><option value="1440" '+(dp.u===1440?'selected':'')+'>Hari</option></select></div>')+
     saveBtn('saveConfig()'))+
   card('Socials','Ikon sosial media di footer web.','<div id="socList" class="space-y-2 mb-3 max-w-lg"></div><button onclick="addSoc()" class="text-sm border dark:border-gray-700 px-3 py-1.5 rounded-lg mb-3">+ Tambah</button><br>'+saveBtn('saveSocials()'))+
   card('Languages','Bahasa default web publik.',
@@ -202,12 +258,12 @@ async function vSettings(){
     field('Tema','default = sidebar solid · mantis = hijau gradien · nebula = gelap ungu.',('<select id="t_theme" class="'+INP+'"><option value="default" '+(s.theme==='default'?'selected':'')+'>Default</option><option value="mantis" '+(s.theme==='mantis'?'selected':'')+'>Mantis</option><option value="nebula" '+(s.theme==='nebula'?'selected':'')+'>Nebula</option></select>')+
     '<a href="/'+QS+'" target="_blank" class="text-sm text-indigo-600 inline-block mt-1">Buka web publik &rarr;</a>')+
     saveBtn('saveTheme()'))+
-  card('Advance','API key & gembok halaman.',
+  card('Advance','API key & kunci halaman.',
     '<h4 class="text-sm font-semibold mb-1">API Keys</h4><p class="text-xs text-gray-400 mb-2">Untuk otomasi eksternal. <a href="/docs'+QS+'" target="_blank" class="text-indigo-600">Docs</a></p><div id="keyList" class="space-y-2 mb-3 max-w-lg"></div>'+
     '<div class="flex gap-2 mb-6 max-w-md"><input id="keyLabel" placeholder="label (mis. bot-signup)" class="flex-1 '+INP+'"/><button onclick="addKey()" class="bg-indigo-600 text-white px-4 rounded-lg">Buat</button></div>'+
     '<h4 class="text-sm font-semibold mb-1">Kunci Web</h4><p class="text-xs text-gray-400 mb-2">Kunci web publik dengan password.</p>'+
     field('Aktifkan','',toggle('lk_on',lk.enable,'Kunci web'))+
-    field('Teks','Pesan di layar gembok.',inp('lk_text',lk.text||''))+
+    field('Teks','Pesan di layar kunci.',inp('lk_text',lk.text||''))+
     field('Password','',inp('lk_pass',lk.password||''))+
     saveBtn('saveLock()'))+
   card('Export / Import','Cadangkan / pulihkan daftar domain & setting.',
@@ -220,12 +276,12 @@ function addSoc(){ window.__soc.push({icon:'',link:''}); renderSoc(); }
 async function put(patch){ const r=await api('/settings',{method:'POST',body:JSON.stringify(patch)}); if(r.error)alert(r.error); else { toast('Tersimpan'); if(r.settings)window.__S=r.settings; } }
 function saveGeneral(){ put({brand_name:$('#g_brand').value,logo_url:$('#g_logo').value,color_primary:$('#g_c1').value,color_secondary:$('#g_c2').value,color_tertiary:$('#g_c3').value,dark_mode:$('#g_dark').checked?1:0}); }
 function saveImap(){ const p={imap_host:$('#i_host').value,imap_port:+$('#i_port').value,imap_user:$('#i_user').value,imap_tls:$('#i_tls').checked?1:0}; const pw=$('#i_pass').value; if(pw)p.imap_pass=pw; put(p); }
-function saveConfig(){ put({email_limit:+$('#c_limit').value}); }
+function saveConfig(){ put({email_limit:+$('#c_limit').value, delete_after_minutes:(+$('#c_delv').value)*(+$('#c_delu').value)}); }
 function saveSocials(){ put({socials_json:JSON.stringify(window.__soc)}); }
 function saveLang(){ put({lang:$('#l_lang').value}); }
 function saveTheme(){ put({theme:$('#t_theme').value}); }
 function saveLock(){ put({lock_json:JSON.stringify({enable:$('#lk_on').checked,text:$('#lk_text').value,password:$('#lk_pass').value})}); }
-async function loadKeys(){ const d=await api('/keys'); $('#keyList').innerHTML=(d.keys||[]).map(k=>'<div class="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm"><div class="min-w-0"><span class="font-mono">'+esc(k.key)+'</span> <span class="text-gray-400 ml-2">'+esc(k.label)+'</span></div><button onclick="delKey(\''+k.id+'\')" class="text-red-600">Hapus</button></div>').join('')||'<div class="text-gray-400 text-sm">Belum ada key</div>'; }
+async function loadKeys(){ const d=await api('/keys'); $('#keyList').innerHTML=(d.keys||[]).map(k=>'<div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-sm"><div class="min-w-0"><span class="font-mono">'+esc(k.key)+'</span> <span class="text-gray-400 ml-2">'+esc(k.label)+'</span></div><button onclick="delKey(\''+k.id+'\')" class="text-red-600">Hapus</button></div>').join('')||'<div class="text-gray-400 text-sm">Belum ada key</div>'; }
 async function addKey(){ const label=$('#keyLabel').value; const r=await api('/keys',{method:'POST',body:JSON.stringify({label})}); if(r.key){ $('#keyLabel').value=''; loadKeys(); toast('Key dibuat'); } }
 async function delKey(id){ if(confirm('Cabut key?')){ await api('/keys/delete',{method:'POST',body:JSON.stringify({id})}); loadKeys(); } }
 async function doExport(){ const d=await api('/export'); const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='tmail-export.json'; a.click(); }
@@ -235,10 +291,29 @@ async function doImport(el){ const f=el.files[0]; if(!f)return; const t=await f.
 function vProfile(){ view.innerHTML='<h1 class="text-2xl font-bold mb-6">Profile</h1>'+card('Akun','Ubah nama & password.',field('Nama','',inp('p_name',ME.name))+field('Password baru','Kosongkan jika tak ganti.',inp('p_pass','','password'))+'<button onclick="saveProfile()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg">Simpan</button>'); }
 async function saveProfile(){ const b={name:$('#p_name').value}; const pw=$('#p_pass').value; if(pw)b.password=pw; const r=await api('/profile',{method:'POST',body:JSON.stringify(b)}); if(r.ok){toast('Tersimpan');ME.name=b.name;$('#userName').textContent=b.name;} }
 
-/* ============ USERS (owner) — modal + detail expand ============ */
+/* ============ USERS (owner) — card + popup ============ */
 function vUsers(){
-  view.innerHTML='<div class="flex items-center justify-between mb-6"><h1 class="text-2xl font-bold">Users (Buyers)</h1><button onclick="modalCreateBuyer()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm"><i class="fas fa-plus mr-1"></i> Buat Buyer</button></div><div id="userList" class="space-y-3"></div>';
+  view.innerHTML='<div class="flex items-center justify-between mb-6"><h1 class="text-2xl font-bold">Users (Buyers)</h1><button onclick="modalCreateBuyer()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm"><i class="fas fa-plus mr-1"></i> Buat Buyer</button></div><div id="userGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>';
   loadUsers();
+}
+async function loadUsers(){
+  const d=await api('/buyers'); window.__U={};
+  $('#userGrid').innerHTML=(d.buyers||[]).map(u=>{ window.__U[u.id]=u;
+    const exp=u.expires_at?new Date(u.expires_at).toISOString().slice(0,10):'—';
+    const days=u.expires_at?Math.ceil((u.expires_at-Date.now())/86400000):null;
+    const badge=u.status==='active'?'bg-green-100 text-green-700':(u.status==='expired'?'bg-red-100 text-red-700':'bg-gray-200 text-gray-600');
+    const warn=(u.status==='active'&&days!=null&&days<=3&&days>=0)?'<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded"><i class="fas fa-triangle-exclamation"></i> '+days+'h</span>':'';
+    return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-4">'+
+      '<div class="flex items-start justify-between gap-2 mb-2"><div class="min-w-0"><div class="font-medium truncate">'+esc(u.email)+'</div><div class="text-xs text-gray-400">'+esc(u.name||'-')+'</div></div><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+u.status+'</span></div>'+
+      '<div class="flex items-center gap-2 text-xs '+(days!=null&&days<=3?'text-amber-600':'text-gray-400')+' mb-3">exp: '+exp+(days!=null?' ('+days+'h)':'')+' '+warn+'</div>'+
+      '<div class="flex flex-wrap gap-2 text-xs">'+
+        '<button onclick="showDetail(\''+u.id+'\')" class="border dark:border-gray-700 px-2 py-1 rounded"><i class="fas fa-chart-line"></i> Detail</button>'+
+        '<button onclick="modalEditBuyer(\''+u.id+'\')" class="border dark:border-gray-700 px-2 py-1 rounded"><i class="fas fa-pen"></i> Edit</button>'+
+        '<button onclick="loginAs(\''+u.id+'\')" class="border dark:border-gray-700 px-2 py-1 rounded"><i class="fas fa-user-secret"></i> Login as</button>'+
+        '<button onclick="extend(\''+u.id+'\')" class="border dark:border-gray-700 px-2 py-1 rounded">Perpanjang</button>'+
+        '<button onclick="toggleUser(\''+u.id+'\',\''+(u.status==='suspended'?'active':'suspended')+'\')" class="border dark:border-gray-700 px-2 py-1 rounded">'+(u.status==='suspended'?'Aktifkan':'Suspend')+'</button>'+
+        '<button onclick="delUser(\''+u.id+'\')" class="border border-red-200 text-red-600 px-2 py-1 rounded">Hapus</button></div></div>';
+  }).join('')||'<div class="col-span-full text-center text-gray-400 py-10 border border-dashed dark:border-gray-800 rounded-xl">Belum ada buyer</div>';
 }
 function modalCreateBuyer(){
   openModal('<h3 class="text-lg font-bold mb-4">Buat Buyer</h3>'+
@@ -256,42 +331,35 @@ async function submitCreateBuyer(){
   if(r.error){alert(r.error);return;}
   closeModal(); loadUsers(); toast('Buyer dibuat');
 }
-async function loadUsers(){
-  const d=await api('/buyers');
-  $('#userList').innerHTML=(d.buyers||[]).map(u=>{
-    const exp=u.expires_at?new Date(u.expires_at).toISOString().slice(0,10):'—';
-    const days=u.expires_at?Math.ceil((u.expires_at-Date.now())/86400000):null;
-    const badge=u.status==='active'?'bg-green-100 text-green-700':(u.status==='expired'?'bg-red-100 text-red-700':'bg-gray-200 text-gray-600');
-    const warn=(u.status==='active'&&days!=null&&days<=3&&days>=0)?'<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded ml-1"><i class="fas fa-triangle-exclamation"></i> mau habis '+days+'h</span>':'';
-    return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">'+
-      '<div class="p-4 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleDetail(\''+u.id+'\')">'+
-        '<div><div class="font-medium">'+esc(u.email)+' <span class="text-xs '+badge+' px-2 py-0.5 rounded ml-1">'+u.status+'</span>'+warn+'</div>'+
-        '<div class="text-xs '+(days!=null&&days<=3?'text-amber-600':'text-gray-400')+'">'+esc(u.name)+' · exp: '+exp+(days!=null?' ('+days+'h)':'')+' <i class="fas fa-chevron-down ml-1"></i></div></div>'+
-        '<div class="flex flex-wrap gap-2 text-xs" onclick="event.stopPropagation()">'+
-          '<button onclick="loginAs(\''+u.id+'\')" class="border dark:border-gray-700 px-2 py-1 rounded"><i class="fas fa-user-secret"></i> Login as</button>'+
-          '<button onclick="extend(\''+u.id+'\')" class="border dark:border-gray-700 px-2 py-1 rounded">Perpanjang</button>'+
-          '<button onclick="toggleUser(\''+u.id+'\',\''+(u.status==='suspended'?'active':'suspended')+'\')" class="border dark:border-gray-700 px-2 py-1 rounded">'+(u.status==='suspended'?'Aktifkan':'Suspend')+'</button>'+
-          '<button onclick="delUser(\''+u.id+'\')" class="border border-red-200 text-red-600 px-2 py-1 rounded">Hapus</button></div></div>'+
-      '<div id="det-'+u.id+'" class="hidden border-t border-gray-100 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900 text-sm"></div></div>';
-  }).join('')||'<div class="text-center text-gray-400 py-10 border border-dashed dark:border-gray-800 rounded-xl">Belum ada buyer</div>';
+function modalEditBuyer(id){
+  const u=window.__U[id]; if(!u)return;
+  openModal('<h3 class="text-lg font-bold mb-4">Edit Buyer</h3>'+
+    field('Email','',inp('e_email',u.email,'email'))+
+    field('Nama','',inp('e_name',u.name||''))+
+    field('Password baru','Kosongkan jika tak ganti.',inp('e_pass','','text','password baru'))+
+    '<div class="flex gap-2 justify-end mt-2"><button onclick="closeModal()" class="px-4 py-2 rounded-lg border dark:border-gray-700">Batal</button><button onclick="submitEditBuyer(\''+id+'\')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Simpan</button></div>');
 }
-async function toggleDetail(id){
-  const el=$('#det-'+id); if(!el)return;
-  if(!el.classList.contains('hidden')){ el.classList.add('hidden'); return; }
-  el.classList.remove('hidden'); el.innerHTML='<span class="text-gray-400">memuat…</span>';
+async function submitEditBuyer(id){
+  const b={id,email:$('#e_email').value,name:$('#e_name').value}; const pw=$('#e_pass').value; if(pw)b.password=pw;
+  const r=await api('/buyers/update',{method:'POST',body:JSON.stringify(b)});
+  if(r.error){alert(r.error);return;}
+  closeModal(); loadUsers(); toast('Tersimpan');
+}
+async function showDetail(id){
+  openModal('<div class="text-center text-gray-400 py-6">memuat…</div>', true);
   const d=await api('/buyers/detail?id='+id);
-  if(d.error){ el.innerHTML='<span class="text-red-500">'+esc(d.error)+'</span>'; return; }
+  if(d.error){ openModal('<div class="text-red-500">'+esc(d.error)+'</div>'); return; }
   const created=new Date(d.user.created_at).toISOString().slice(0,10);
-  const stat=(l,v)=>'<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-800 p-3"><div class="text-lg font-bold">'+v+'</div><div class="text-xs text-gray-500">'+l+'</div></div>';
-  el.innerHTML=
-    '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">'+stat('Email dibuat',d.stats.emails)+stat('Pesan diterima',d.stats.messages)+stat('Domain',d.domains.length)+stat('Web hostname',d.hostnames.length)+'</div>'+
-    '<div class="grid md:grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600 dark:text-gray-300">'+
-      '<div><b>Dibuat:</b> '+created+'</div><div><b>IMAP:</b> '+(d.settings.has_imap?esc(d.settings.imap_host||'terisi'):'<span class=\"text-red-500\">belum diset</span>')+'</div>'+
+  const stat=(l,v)=>'<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center"><div class="text-lg font-bold">'+v+'</div><div class="text-xs text-gray-500">'+l+'</div></div>';
+  openModal(
+    '<div class="flex justify-between items-start mb-4"><div><h3 class="text-lg font-bold">'+esc(d.user.email)+'</h3><div class="text-xs text-gray-400">'+esc(d.user.name||'')+' · '+esc(d.user.status)+'</div></div><button onclick="closeModal()" class="text-2xl leading-none text-gray-400">&times;</button></div>'+
+    '<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">'+stat('Email dibuat',d.stats.emails)+stat('Pesan diterima',d.stats.messages)+stat('Domain',d.domains.length)+stat('Web',d.hostnames.length)+'</div>'+
+    '<div class="grid md:grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600 dark:text-gray-300 mb-3">'+
+      '<div><b>Dibuat:</b> '+created+'</div><div><b>IMAP:</b> '+(d.settings.has_imap?esc(d.settings.imap_host||'terisi'):'<span class=\"text-red-500\">belum</span>')+'</div>'+
       '<div><b>Tema:</b> '+esc(d.settings.theme)+' · <b>Bahasa:</b> '+esc(d.settings.lang)+'</div>'+
-      '<div><b>Domain:</b> '+(d.domains.map(x=>esc(x.domain)).join(', ')||'—')+'</div>'+
-      '<div class="md:col-span-2"><b>Web:</b> '+(d.hostnames.map(x=>esc(x.hostname)+' ('+esc(x.status)+')').join(', ')||'—')+'</div>'+
-    '</div>'+
-    chartSVG(d.stats.series);
+      '<div class="md:col-span-2"><b>Domain:</b> '+(d.domains.map(x=>esc(x.domain)).join(', ')||'—')+'</div></div>'+
+    '<div class="max-w-md mx-auto">'+chartSVG(d.stats.series,140)+'</div>',
+    true);
 }
 async function extend(id){ const days=prompt('Perpanjang berapa hari dari sekarang? (0 = tanpa batas)','30'); if(days==null)return; await api('/buyers/expiry',{method:'POST',body:JSON.stringify({id,days:+days})}); loadUsers(); }
 async function toggleUser(id,status){ await api('/buyers/status',{method:'POST',body:JSON.stringify({id,status})}); loadUsers(); }
@@ -299,7 +367,7 @@ async function delUser(id){ if(confirm('Hapus buyer + semua datanya?')){ await a
 async function loginAs(id){ const r=await api('/buyers/login-as',{method:'POST',body:JSON.stringify({id})}); if(r.url) location.href=r.url+(QS?(r.url.indexOf('?')>=0?'&':'?')+QS.slice(1):''); else alert(r.error||'gagal'); }
 
 /* ============ router ============ */
-const ROUTES={ '#dashboard':vDashboard, '#domains':vDomains, '#settings':vSettings, '#profile':vProfile, '#users':vUsers };
+const ROUTES={ '#dashboard':vDashboard, '#inbox':vInbox, '#domains':vDomains, '#settings':vSettings, '#profile':vProfile, '#users':vUsers };
 function route(){ let hash=location.hash||(ME.role==='owner'?'#users':'#dashboard'); if(!ROUTES[hash])hash=(ME.role==='owner'?'#users':'#dashboard'); setActive(hash); (ROUTES[hash]||(()=>view.innerHTML='404'))(); }
 window.addEventListener('hashchange', route);
 

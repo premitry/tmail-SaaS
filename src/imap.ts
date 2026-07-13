@@ -173,7 +173,7 @@ async function pollBuyer(
       if (raw) {
         const parsed = await PostalMime.parse(raw);
         for (const rcpt of recipientsFor(parsed, domains)) {
-          await storeParsed(env, rcpt, parsed, parsed.from?.address || "unknown@" + domains[0]);
+          await storeParsed(env, rcpt, parsed, parsed.from?.address || "unknown@" + domains[0], db, buyerId);
           stored++;
         }
       }

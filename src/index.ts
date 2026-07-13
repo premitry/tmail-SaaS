@@ -29,6 +29,7 @@ export default {
     const db = new DB(env.DB);
     ctx.waitUntil((async () => {
       try { await db.expireOverdue(); } catch (e) { console.log("expire err", (e as Error).message); }
+      try { await db.gcAllMessages(); } catch (e) { console.log("gc err", (e as Error).message); }
       try { await pollAllImap(env); } catch (e) { console.log("poll err", (e as Error).message); }
     })());
   },

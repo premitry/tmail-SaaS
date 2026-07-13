@@ -33,10 +33,26 @@ CREATE TABLE IF NOT EXISTS buyer_settings (
   lang          TEXT NOT NULL DEFAULT 'id',      -- id | en
   dark_mode     INTEGER NOT NULL DEFAULT 1,
   email_limit   INTEGER NOT NULL DEFAULT 5,
+  delete_after_minutes INTEGER NOT NULL DEFAULT 1440,
   socials_json  TEXT NOT NULL DEFAULT '[]',
   lock_json     TEXT NOT NULL DEFAULT '{"enable":false,"text":"","password":""}',
   updated_at    INTEGER
 );
+
+-- Riwayat email masuk (untuk halaman Inbox gabungan per-buyer).
+CREATE TABLE IF NOT EXISTS messages (
+  id          TEXT PRIMARY KEY,
+  buyer_id    TEXT NOT NULL,
+  to_addr     TEXT NOT NULL,
+  from_addr   TEXT NOT NULL,
+  subject     TEXT NOT NULL DEFAULT '',
+  preview     TEXT NOT NULL DEFAULT '',
+  html        TEXT NOT NULL DEFAULT '',
+  text        TEXT NOT NULL DEFAULT '',
+  received_at INTEGER NOT NULL,
+  seen        INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_messages_buyer ON messages(buyer_id, received_at);
 
 -- Domain email milik buyer (semua otomatis pakai IMAP buyer tsb).
 CREATE TABLE IF NOT EXISTS domains (

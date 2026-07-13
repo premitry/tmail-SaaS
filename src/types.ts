@@ -46,6 +46,7 @@ export interface BuyerSettings {
   lang: string;
   dark_mode: number;
   email_limit: number;
+  delete_after_minutes: number;
   socials_json: string;
   lock_json: string;
   updated_at: number | null;
