@@ -57,8 +57,8 @@ export function renderPublicPage(o: PublicOpts): string {
   const statusEl = `<span id="statusDot" class="text-xs text-gray-400"><i class="fas fa-circle text-[8px]"></i> <span id="statusText">idle</span></span>`;
 
   const inboxArea = `
-    <div id="inboxList" class="w-full lg:w-1/3 border-r border-gray-200 dark:border-gray-800 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 min-h-[320px]"></div>
-    <div id="msgView" class="w-full lg:w-2/3 flex flex-col min-h-[320px]"></div>`;
+    <div id="inboxList" class="w-full min-h-[320px] divide-y divide-gray-100 dark:divide-gray-800"></div>
+    <div id="msgView" class="w-full min-h-[320px] flex-col" style="display:none"></div>`;
 
   const footer = `<footer class="bg-gray-800 text-white text-sm px-6 py-4 text-center">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>`;
 
@@ -83,7 +83,7 @@ export function renderPublicPage(o: PublicOpts): string {
   </aside>
   <div class="flex-1 flex flex-col min-w-0">
     <nav class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-5 h-16 flex items-center justify-end gap-4">${statusEl}${darkBtn}</nav>
-    <main class="flex-1 lg:flex bg-white dark:bg-gray-900" id="inboxWrap" style="display:none">${inboxArea}</main>
+    <main class="flex-1 bg-white dark:bg-gray-900" id="inboxWrap" style="display:none">${inboxArea}</main>
     ${footer}
   </div>
 </div>`;
@@ -118,7 +118,7 @@ export function renderPublicPage(o: PublicOpts): string {
     </div>
   </div>
   <main class="container mx-auto flex-1 p-5 w-full">
-    <div class="lg:flex bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm" id="inboxWrap" style="display:none">${inboxArea}</div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm" id="inboxWrap" style="display:none">${inboxArea}</div>
   </main>
   ${footer}
 </div>`;
@@ -149,7 +149,7 @@ export function renderPublicPage(o: PublicOpts): string {
     </div>
   </header>
   <div class="container mx-auto px-4 -mt-16 mb-8 relative z-10 flex-1">
-    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden lg:flex" id="inboxWrap" style="display:none">${inboxArea}</div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden" id="inboxWrap" style="display:none">${inboxArea}</div>
   </div>
   <footer class="bg-gray-800 text-white text-sm px-6 pt-14 pb-6 text-center -mt-6">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>
 </div>`;
@@ -204,11 +204,18 @@ async function openMsg(id){
   const res = await api('/message?a=' + encodeURIComponent(addr) + '&id=' + id);
   if(res.error){ alert(res.error); return; }
   const body = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
-  $('#msgView').innerHTML = '<div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-start gap-3"><div class="min-w-0"><div class="text-lg text-gray-900 dark:text-gray-100 truncate">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400 truncate">'+escapeHtml(res.sender)+'</div></div><button onclick="delMsg(\\''+id+'\\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md whitespace-nowrap">Hapus</button></div>'+
-    '<iframe class="flex-1 w-full bg-white min-h-[320px]" sandbox="allow-same-origin" srcdoc="'+escapeAttr(body)+'"></iframe>';
+  var mv=$('#msgView');
+  mv.innerHTML = '<div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">'+
+      '<button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali ke Inbox</button>'+
+      '<button onclick="delMsg(\\''+id+'\\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md">Delete</button></div>'+
+    '<div class="p-4 border-b border-dashed border-gray-200 dark:border-gray-700"><div class="text-base text-gray-900 dark:text-gray-100">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400">'+escapeHtml(res.sender)+'</div></div>'+
+    '<iframe class="flex-1 w-full bg-white min-h-[360px]" sandbox="allow-same-origin" srcdoc="'+escapeAttr(body)+'"></iframe>';
+  $('#inboxList').style.display='none'; mv.style.display='flex';
   loadInbox();
 }
-async function delMsg(id){ await api('/delete?a=' + encodeURIComponent(addr) + '&id=' + id, { method:'POST' }); $('#msgView').innerHTML=''; loadInbox(); }
+function backToList(){ var mv=$('#msgView'); if(mv) mv.style.display='none'; var l=$('#inboxList'); if(l) l.style.display=''; }
+function deleteAddr(){ if(!addr) return; if(!confirm('Hapus alamat '+addr+' dari daftar?')) return; addrs=addrs.filter(function(x){return x!==addr;}); localStorage.setItem(LKEY, JSON.stringify(addrs)); if(addrs.length){ setActiveAddr(addrs[0]); } else { addr=''; localStorage.removeItem(AKEY); showCreate(); } }
+async function delMsg(id){ await api('/delete?a=' + encodeURIComponent(addr) + '&id=' + id, { method:'POST' }); backToList(); loadInbox(); }
 function connectWS(){
   if(ws){ try{ws.close();}catch(e){} }
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -225,7 +232,7 @@ document.querySelectorAll('.act').forEach(b => b.onclick = () => {
   if(a==='copy'){ navigator.clipboard.writeText(addr); status('tersalin!','text-green-500'); }
   if(a==='refresh'){ loadInbox(); }
   if(a==='new'){ showCreate(); }
-  if(a==='clear'){ if(confirm('Kosongkan inbox?')) api('/clear?a='+encodeURIComponent(addr),{method:'POST'}).then(loadInbox); }
+  if(a==='clear'){ deleteAddr(); }
 });
 if(addr){ showActive(); loadInbox(); connectWS(); }
 setInterval(()=>{ if(addr) loadInbox(); }, 15000);
