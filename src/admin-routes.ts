@@ -83,7 +83,7 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
       expiresInDays: days, impersonating: !!s.impersonatorId,
     });
   }
-  if (path === "/dashboard") return json(await db.getStats(buyerId));
+  if (path === "/dashboard") return json(await db.getStats(buyerId, parseInt(url.searchParams.get("days") || "14", 10)));
 
   if (path === "/domains" && req.method === "GET") return json({ domains: await db.listDomains(buyerId) });
   if (path === "/domains" && req.method === "POST") {

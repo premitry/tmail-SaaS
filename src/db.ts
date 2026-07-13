@@ -221,15 +221,16 @@ export class DB {
        ON CONFLICT(buyer_id, day) DO UPDATE SET messages_received = messages_received + ?`)
       .bind(buyerId, today(), by, by).run();
   }
-  async getStats(buyerId: string): Promise<{ emails: number; messages: number; domains: number; series: any[] }> {
+  async getStats(buyerId: string, days = 14): Promise<{ emails: number; messages: number; domains: number; series: any[] }> {
+    const limit = Math.max(1, Math.min(90, days || 14));
     const totals = await this.d1.prepare(
       `SELECT COALESCE(SUM(emails_created),0) AS emails, COALESCE(SUM(messages_received),0) AS messages
        FROM stats WHERE buyer_id = ?`).bind(buyerId).first<{ emails: number; messages: number }>();
     const domains = await this.d1.prepare(`SELECT COUNT(*) AS c FROM domains WHERE buyer_id = ?`)
       .bind(buyerId).first<{ c: number }>();
     const series = await this.d1.prepare(
-      `SELECT day, emails_created, messages_received FROM stats WHERE buyer_id = ? ORDER BY day DESC LIMIT 14`)
-      .bind(buyerId).all();
+      `SELECT day, emails_created, messages_received FROM stats WHERE buyer_id = ? ORDER BY day DESC LIMIT ?`)
+      .bind(buyerId, limit).all();
     return {
       emails: totals?.emails ?? 0,
       messages: totals?.messages ?? 0,

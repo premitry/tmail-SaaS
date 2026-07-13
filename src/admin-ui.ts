@@ -128,11 +128,23 @@ function chartSVG(series){
     '<div class="flex gap-4 justify-center text-xs text-gray-500 mt-2"><span><i class="fas fa-square text-indigo-500"></i> Email dibuat</span><span><i class="fas fa-square text-green-500"></i> Pesan diterima</span></div>';
 }
 async function vDashboard(){
-  view.innerHTML='<h1 class="text-2xl font-bold mb-6">Dashboard</h1><div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div><div id="chart"></div>';
+  view.innerHTML='<h1 class="text-2xl font-bold mb-6">Dashboard</h1><div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>'+
+    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5">'+
+      '<div class="flex items-center justify-between mb-1"><h3 class="font-semibold">Aktivitas</h3>'+
+        '<select id="daySel" onchange="loadChart(this.value)" class="text-sm rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">'+
+          '<option value="7">7 hari</option><option value="14" selected>14 hari</option><option value="30">30 hari</option><option value="60">60 hari</option><option value="90">90 hari</option>'+
+        '</select></div>'+
+      '<p class="text-xs text-gray-400 mb-3">Jumlah email dibuat & pesan diterima per hari.</p>'+
+      '<div id="chartBody" class="text-gray-400 text-sm py-12 text-center">Memuat…</div></div>';
   const d=await api('/dashboard');
   const cards=[['Email dibuat',d.emails,'fa-at','text-indigo-600'],['Pesan diterima',d.messages,'fa-inbox','text-green-600'],['Domain',d.domains,'fa-globe','text-purple-600'],['Hari ini',(d.series&&d.series.length?d.series[d.series.length-1].messages_received:0),'fa-bolt','text-amber-600']];
   $('#cards').innerHTML=cards.map(c=>'<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5"><div class="'+c[3]+' text-xl mb-2"><i class="fas '+c[2]+'"></i></div><div class="text-3xl font-bold">'+(c[1]||0)+'</div><div class="text-sm text-gray-500 mt-1">'+c[0]+'</div></div>').join('');
-  $('#chart').innerHTML=card('Aktivitas 14 hari','Jumlah email dibuat & pesan diterima per hari.',chartSVG(d.series));
+  $('#chartBody').innerHTML=chartSVG(d.series);
+}
+async function loadChart(days){
+  const el=$('#chartBody'); if(el) el.innerHTML='<div class="py-12 text-center text-gray-400 text-sm">Memuat…</div>';
+  const d=await api('/dashboard?days='+days);
+  if($('#chartBody')) $('#chartBody').innerHTML=chartSVG(d.series);
 }
 
 /* ============ DOMAINS (card) ============ */
