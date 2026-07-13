@@ -26,10 +26,11 @@ CREATE TABLE IF NOT EXISTS buyer_settings (
   imap_last_uid INTEGER NOT NULL DEFAULT 0,
   brand_name    TEXT NOT NULL DEFAULT 'TMail',
   logo_url      TEXT NOT NULL DEFAULT '',
+  favicon_url   TEXT NOT NULL DEFAULT '',
   color_primary   TEXT NOT NULL DEFAULT '#1d4ed8',
   color_secondary TEXT NOT NULL DEFAULT '#14b8a6',
   color_tertiary  TEXT NOT NULL DEFAULT '#eab308',
-  theme         TEXT NOT NULL DEFAULT 'default', -- default | mantis | nebula
+  theme         TEXT NOT NULL DEFAULT 'nebula', -- default | mantis | nebula
   lang          TEXT NOT NULL DEFAULT 'id',      -- id | en
   dark_mode     INTEGER NOT NULL DEFAULT 1,
   email_limit   INTEGER NOT NULL DEFAULT 5,

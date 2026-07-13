@@ -17,3 +17,6 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_messages_buyer ON messages(buyer_id, received_at);
 
 ALTER TABLE buyer_settings ADD COLUMN delete_after_minutes INTEGER NOT NULL DEFAULT 1440;
+ALTER TABLE buyer_settings ADD COLUMN favicon_url TEXT NOT NULL DEFAULT '';
+-- default tema baru = nebula (terapkan ke yang masih 'default')
+UPDATE buyer_settings SET theme='nebula' WHERE theme='default';

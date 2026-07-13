@@ -86,7 +86,7 @@ export class DB {
   async ensureBuyerSettings(buyerId: string): Promise<BuyerSettings> {
     let s = await this.getBuyerSettings(buyerId);
     if (!s) {
-      await this.d1.prepare(`INSERT OR IGNORE INTO buyer_settings (buyer_id, updated_at) VALUES (?, ?)`)
+      await this.d1.prepare(`INSERT OR IGNORE INTO buyer_settings (buyer_id, theme, updated_at) VALUES (?, 'nebula', ?)`)
         .bind(buyerId, Date.now()).run();
       s = await this.getBuyerSettings(buyerId);
     }
@@ -99,7 +99,7 @@ export class DB {
   async updateBuyerSettings(buyerId: string, patch: Partial<BuyerSettings>): Promise<void> {
     const allowed = [
       "imap_host", "imap_port", "imap_user", "imap_pass_enc", "imap_tls", "imap_last_uid",
-      "brand_name", "logo_url", "color_primary", "color_secondary", "color_tertiary",
+      "brand_name", "logo_url", "favicon_url", "color_primary", "color_secondary", "color_tertiary",
       "theme", "lang", "dark_mode", "email_limit", "delete_after_minutes", "socials_json", "lock_json",
     ];
     const keys = Object.keys(patch).filter((k) => allowed.includes(k));

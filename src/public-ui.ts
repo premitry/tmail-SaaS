@@ -1,9 +1,12 @@
 // Halaman web publik temp-mail (niru TMail, 3 tema, dark/light, realtime).
 import { esc, head } from "./ui";
+import { DEFAULT_LOGO } from "./assets";
 
 export interface PublicOpts {
   brand: string;
   emoji: string;
+  logoUrl: string;
+  faviconUrl: string;
   colors: { primary: string; secondary: string; tertiary: string };
   theme: string; // default | mantis | nebula
   domains: string[];
@@ -45,13 +48,15 @@ export function renderPublicPage(o: PublicOpts): string {
     brand: o.brand,
   });
 
-  return `${head(o.brand)}
+  const logo = o.logoUrl || DEFAULT_LOGO;
+  const favicon = o.faviconUrl || DEFAULT_LOGO;
+  return `${head(o.brand, "", favicon)}
 <body class="${t.page} text-gray-800 dark:text-gray-200">
 <div class="min-h-screen flex flex-col lg:flex-row">
   <!-- SIDEBAR -->
   <aside class="w-full lg:w-1/4 ${t.sidebarClass} py-6 px-6 flex flex-col" style="${t.sidebarStyle}">
-    <div class="flex items-center justify-center gap-2 mb-8 text-2xl font-bold">
-      <span class="text-3xl">${o.emoji}</span><span>${esc(o.brand)}</span>
+    <div class="flex items-center justify-center mb-8">
+      <img src="${esc(logo)}" alt="${esc(o.brand)}" class="max-h-12 max-w-[75%] object-contain" />
     </div>
 
     <!-- Panel: buat alamat -->

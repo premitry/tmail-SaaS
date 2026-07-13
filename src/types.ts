@@ -39,6 +39,7 @@ export interface BuyerSettings {
   imap_last_uid: number;
   brand_name: string;
   logo_url: string;
+  favicon_url: string;
   color_primary: string;
   color_secondary: string;
   color_tertiary: string;

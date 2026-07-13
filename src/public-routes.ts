@@ -51,7 +51,7 @@ export async function handlePublic(
   // Halaman utama
   if (path === "/" || path === "/index.html") {
     return html(renderPublicPage({
-      brand: st.brand_name, emoji: "📮",
+      brand: st.brand_name, emoji: "📮", logoUrl: st.logo_url, faviconUrl: st.favicon_url,
       colors: { primary: st.color_primary, secondary: st.color_secondary, tertiary: st.color_tertiary },
       theme: st.theme, domains,
       socials: safeJson(st.socials_json, []),

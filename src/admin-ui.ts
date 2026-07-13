@@ -229,12 +229,18 @@ async function delDomain(id){ if(confirm('Hapus domain?')){ await api('/domains/
 function durParts(min){ min=+min||0; if(min>0&&min%1440===0)return{v:min/1440,u:1440}; if(min>0&&min%60===0)return{v:min/60,u:60}; return{v:min,u:1}; }
 async function vSettings(){
   const s=await api('/settings'); window.__S=s;
+  window.__img={logo:s.logo_url||'',favicon:s.favicon_url||''};
   const lk=JSON.parse(s.lock_json||'{}'); window.__soc=JSON.parse(s.socials_json||'[]');
+  function imgField(kind,label,desc){ const cur=window.__img[kind];
+    return field(label,desc,'<div class="flex items-center gap-3"><img id="'+kind+'Prev" src="'+esc(cur)+'" class="'+(cur?'':'hidden ')+'h-10 bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 p-1 object-contain"/>'+
+      '<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onchange="readImg(this,\''+kind+'\')" class="text-sm"/>'+
+      '<button type="button" onclick="clearImg(\''+kind+'\')" class="text-xs text-red-600">Bawaan TMail</button></div>'); }
   const dp=durParts(s.delete_after_minutes);
   view.innerHTML='<h1 class="text-2xl font-bold mb-6">Settings</h1>'+
   card('General','Identitas & warna tampilan web publik.',
     field('Nama Aplikasi','Nama brand yang tampil di web & admin.',inp('g_brand',s.brand_name))+
-    field('Logo URL','Alamat gambar logo (opsional).',inp('g_logo',s.logo_url,'text','https://…'))+
+    imgField('logo','Logo','Upload gambar (maks 200KB). Kosong = bawaan TMail.')+
+    imgField('favicon','Favicon','Ikon tab browser. Kosong = bawaan TMail.')+
     '<div class="flex flex-wrap gap-4">'+field('Warna Primer','Sidebar.',inp('g_c1',s.color_primary,'color'))+field('Sekunder','Tombol Create.',inp('g_c2',s.color_secondary,'color'))+field('Tersier','Tombol Random.',inp('g_c3',s.color_tertiary,'color'))+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
@@ -274,7 +280,9 @@ async function vSettings(){
 function renderSoc(){ $('#socList').innerHTML=window.__soc.map((x,i)=>'<div class="flex gap-2"><input value="'+esc(x.icon)+'" onchange="window.__soc['+i+'].icon=this.value" placeholder="fab fa-twitter" class="w-40 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><input value="'+esc(x.link)+'" onchange="window.__soc['+i+'].link=this.value" placeholder="https://…" class="flex-1 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><button onclick="window.__soc.splice('+i+',1);renderSoc()" class="text-red-600 px-2">&times;</button></div>').join(''); }
 function addSoc(){ window.__soc.push({icon:'',link:''}); renderSoc(); }
 async function put(patch){ const r=await api('/settings',{method:'POST',body:JSON.stringify(patch)}); if(r.error)alert(r.error); else { toast('Tersimpan'); if(r.settings)window.__S=r.settings; } }
-function saveGeneral(){ put({brand_name:$('#g_brand').value,logo_url:$('#g_logo').value,color_primary:$('#g_c1').value,color_secondary:$('#g_c2').value,color_tertiary:$('#g_c3').value,dark_mode:$('#g_dark').checked?1:0}); }
+function readImg(inp,kind){ const f=inp.files[0]; if(!f)return; if(f.size>200000){ alert('Ukuran maksimal 200KB'); inp.value=''; return; } const r=new FileReader(); r.onload=()=>{ window.__img[kind]=r.result; const p=$('#'+kind+'Prev'); if(p){ p.src=r.result; p.classList.remove('hidden'); } }; r.readAsDataURL(f); }
+function clearImg(kind){ window.__img[kind]=''; const p=$('#'+kind+'Prev'); if(p){ p.src=''; p.classList.add('hidden'); } }
+function saveGeneral(){ put({brand_name:$('#g_brand').value,logo_url:window.__img.logo,favicon_url:window.__img.favicon,color_primary:$('#g_c1').value,color_secondary:$('#g_c2').value,color_tertiary:$('#g_c3').value,dark_mode:$('#g_dark').checked?1:0}); }
 function saveImap(){ const p={imap_host:$('#i_host').value,imap_port:+$('#i_port').value,imap_user:$('#i_user').value,imap_tls:$('#i_tls').checked?1:0}; const pw=$('#i_pass').value; if(pw)p.imap_pass=pw; put(p); }
 function saveConfig(){ put({email_limit:+$('#c_limit').value, delete_after_minutes:(+$('#c_delv').value)*(+$('#c_delu').value)}); }
 function saveSocials(){ put({socials_json:JSON.stringify(window.__soc)}); }
