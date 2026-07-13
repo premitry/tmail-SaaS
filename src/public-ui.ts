@@ -81,7 +81,7 @@ export function renderPublicPage(o: PublicOpts): string {
 </div>`;
   } else {
     /* ===== LAYOUT TOPBAR (mantis / nebula) ===== */
-    const inputCls = "rounded-md py-3 px-4 border-0 focus:outline-none bg-white text-gray-800 dark:bg-gray-800 dark:text-white";
+    const inputCls = "bg-white text-gray-800 dark:bg-gray-800 dark:text-white";
     bodyHtml = `
 <div class="min-h-screen flex flex-col">
   <header class="${t.headerClass} px-6 h-16 flex items-center justify-between border-b border-black/10 dark:border-white/10">
@@ -89,17 +89,26 @@ export function renderPublicPage(o: PublicOpts): string {
     <div class="flex items-center gap-4">${statusEl}${socials}${darkBtn}</div>
   </header>
   <div class="text-white" style="${t.barStyle}">
-    <div class="container mx-auto px-6 py-6">
-      <h2 class="text-center text-white/90 font-semibold mb-4">Alamat email sementara kamu siap</h2>
-      <div id="createPanel" class="flex flex-col md:flex-row gap-3">
-        <input id="username" type="text" placeholder="username (opsional)" class="flex-1 ${inputCls}" />
-        <select id="domain" class="${inputCls} cursor-pointer">${domainOptions}</select>
-        <button id="btnCreate" class="rounded-md py-3 px-6 text-white font-semibold" style="background-color:${o.colors.secondary}"><i class="fas fa-chevron-right mr-1"></i> Create</button>
-        <button id="btnRandom" class="rounded-md py-3 px-6 text-white font-semibold" style="background-color:${o.colors.tertiary}"><i class="fas fa-random mr-1"></i> Random</button>
+    <div class="container mx-auto px-6 py-10">
+      <!-- state: buat alamat -->
+      <div id="createPanel" class="flex flex-col md:flex-row items-stretch gap-4">
+        <div class="flex-1 w-full space-y-3">
+          <h2 class="text-center text-xl font-bold mb-1">Buat alamat email sementara</h2>
+          <input id="username" type="text" placeholder="username (opsional)" class="w-full py-4 px-5 border-b-4 focus:outline-none ${inputCls}" style="border-color:${o.colors.secondary}" />
+          <select id="domain" class="w-full py-4 px-5 cursor-pointer focus:outline-none ${inputCls}">${domainOptions}</select>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-1 gap-1 md:w-44">
+          <button id="btnCreate" class="py-4 px-5 text-white font-semibold" style="background-color:${o.colors.secondary}"><i class="fas fa-chevron-right mr-1"></i> Create</button>
+          <button id="btnRandom" class="py-4 px-5 text-white font-semibold" style="background-color:${o.colors.tertiary}"><i class="fas fa-random mr-1"></i> Random</button>
+        </div>
       </div>
-      <div id="activePanel" class="hidden flex-col md:flex-row gap-3 items-stretch">
-        <div id="addrBox" class="flex-1 rounded-md py-3 px-4 bg-white/90 dark:bg-gray-800 text-gray-800 dark:text-white font-mono text-sm break-all flex items-center">-</div>
-        <div class="grid grid-cols-4 gap-2">${actBtns(true)}</div>
+      <!-- state: alamat aktif -->
+      <div id="activePanel" class="hidden flex-col md:flex-row items-stretch gap-4">
+        <div class="flex-1 w-full space-y-3">
+          <h2 class="text-center text-xl font-bold mb-1">Alamat email sementara kamu siap</h2>
+          <div id="addrBox" class="w-full py-4 px-5 border-b-4 font-mono break-all flex items-center justify-between ${inputCls}" style="border-color:${o.colors.secondary}"><span>-</span><i class="fas fa-chevron-down opacity-40"></i></div>
+        </div>
+        <div class="grid grid-cols-4 md:grid-cols-1 gap-0.5 md:w-32">${actBtns(true)}</div>
       </div>
     </div>
   </div>
@@ -188,11 +197,11 @@ function actBtns(compact = false): string {
     ["copy", "far fa-copy", "Copy"],
     ["refresh", "fas fa-sync-alt", "Refresh"],
     ["new", "far fa-plus-square", "New"],
-    ["clear", "far fa-trash-alt", "Clear"],
+    ["clear", "far fa-trash-alt", "Delete"],
   ];
   if (compact) {
     return items.map(([act, icon, label]) =>
-      `<button data-act="${act}" class="act bg-black/25 hover:bg-black/40 text-white rounded-md px-4 py-2 text-center"><div class="text-lg"><i class="${icon}"></i></div><div class="text-[10px] mt-1">${label}</div></button>`).join("");
+      `<button data-act="${act}" class="act bg-black/25 hover:bg-black/40 text-white px-4 py-3 text-center"><i class="${icon} text-lg"></i><div class="text-[11px] mt-1">${label}</div></button>`).join("");
   }
   return items.map(([act, icon, label]) =>
     `<button data-act="${act}" class="act bg-white/10 dark:bg-black/20 hover:bg-white/25 text-white rounded-md py-4 text-center"><div class="text-2xl"><i class="${icon}"></i></div><div class="text-xs mt-2">${label}</div></button>`).join("");
