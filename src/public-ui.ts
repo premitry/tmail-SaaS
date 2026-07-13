@@ -115,11 +115,16 @@ const AKEY = 'tmail_addr_' + HOST;
 let addr = localStorage.getItem(AKEY) || '';
 let ws = null, pollTimer = null, currentId = null;
 
+// Bawa ?__tenant= (untuk tes via IP tanpa DNS) ke semua panggilan API + WS.
+const TENANT = new URLSearchParams(location.search).get('__tenant');
+const TQS = TENANT ? '__tenant=' + encodeURIComponent(TENANT) : '';
+function apiUrl(path){ if(!TQS) return '/api' + path; return '/api' + path + (path.includes('?') ? '&' : '?') + TQS; }
+
 const $ = (s) => document.querySelector(s);
 function status(txt, color){ $('#statusText').textContent = txt; $('#statusDot').className = 'text-xs ' + (color||'text-gray-400'); }
 
 async function api(path, opts){
-  const r = await fetch('/api' + path, opts);
+  const r = await fetch(apiUrl(path), opts);
   return r.json();
 }
 
@@ -193,7 +198,7 @@ async function delMsg(id){
 function connectWS(){
   if(ws){ try{ws.close();}catch(e){} }
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(proto + '://' + location.host + '/api/ws?a=' + encodeURIComponent(addr));
+  ws = new WebSocket(proto + '://' + location.host + '/api/ws?a=' + encodeURIComponent(addr) + (TQS ? '&' + TQS : ''));
   ws.onmessage = (e) => { try{ const d = JSON.parse(e.data); if(d.type==='new'||d.type==='update') loadInbox(); }catch(_){} };
   ws.onclose = () => { setTimeout(()=>{ if(addr) connectWS(); }, 5000); };
 }

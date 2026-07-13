@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # Helper SSH ke VPS: coba key dulu, fallback password (env VPS_PASS). Jalankan perintah dari argv.
 import os, sys, paramiko
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 HOST = os.environ.get("VPS_HOST", "146.190.105.253")
 USER = os.environ.get("VPS_USER", "root")

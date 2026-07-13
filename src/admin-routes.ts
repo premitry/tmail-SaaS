@@ -146,6 +146,20 @@ async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
 
   if (path === "/buyers" && req.method === "GET") return json({ buyers: await db.listBuyers() });
 
+  if (path === "/buyers/detail") {
+    const id = url.searchParams.get("id") || "";
+    const u = await db.getUserById(id);
+    if (!u || u.role !== "buyer") return json({ error: "buyer tidak ditemukan" }, 404);
+    const st = await db.ensureBuyerSettings(id);
+    return json({
+      user: { email: u.email, name: u.name, status: u.status, expires_at: u.expires_at, created_at: u.created_at },
+      settings: { imap_host: st.imap_host, has_imap: !!st.imap_pass_enc, theme: st.theme, lang: st.lang },
+      stats: await db.getStats(id),
+      domains: await db.listDomains(id),
+      hostnames: await db.listHostnames(id),
+    });
+  }
+
   if (path === "/buyers" && req.method === "POST") {
     const b = await body(req);
     if (!b.email || !b.password) return json({ error: "email & password wajib" });
