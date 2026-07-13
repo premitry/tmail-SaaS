@@ -114,19 +114,25 @@ function expiryBanner(){
 /* ============ DASHBOARD (buyer) + grafik ============ */
 function chartSVG(series){
   if(!series||!series.length) return '<div class="text-gray-400 text-sm py-12 text-center">Belum ada data grafik</div>';
-  const w=600,h=200,pad=28,n=series.length; let max=1;
+  const w=620,h=210,pad=32,n=series.length; let max=1;
   series.forEach(s=>{ max=Math.max(max,s.emails_created,s.messages_received); });
-  const bw=(w-pad*2)/n; let bars='';
-  for(let y=0;y<=2;y++){ const gy=pad+(h-pad*2)*y/2; bars+='<line x1="'+pad+'" y1="'+gy+'" x2="'+(w-pad)+'" y2="'+gy+'" stroke="#e5e7eb" stroke-width="1"/>'; }
-  series.forEach((s,i)=>{ const x=pad+i*bw;
-    const eh=(s.emails_created/max)*(h-pad*2), mh=(s.messages_received/max)*(h-pad*2);
-    bars+='<rect x="'+(x+bw*0.18)+'" y="'+(h-pad-eh)+'" width="'+(bw*0.28)+'" height="'+eh+'" fill="#4f46e5" rx="2"><title>'+s.emails_created+' email</title></rect>';
-    bars+='<rect x="'+(x+bw*0.52)+'" y="'+(h-pad-mh)+'" width="'+(bw*0.28)+'" height="'+mh+'" fill="#22c55e" rx="2"><title>'+s.messages_received+' pesan</title></rect>';
-    bars+='<text x="'+(x+bw*0.5)+'" y="'+(h-pad+14)+'" font-size="9" fill="#9ca3af" text-anchor="middle">'+String(s.day).slice(5)+'</text>';
-  });
-  return '<svg viewBox="0 0 '+w+' '+h+'" class="w-full">'+bars+'</svg>'+
-    '<div class="flex gap-4 justify-center text-xs text-gray-500 mt-2"><span><i class="fas fa-square text-indigo-500"></i> Email dibuat</span><span><i class="fas fa-square text-green-500"></i> Pesan diterima</span></div>';
+  const X=i=> n===1 ? pad+(w-pad*2)/2 : pad+(w-pad*2)*i/(n-1);
+  const Y=v=> h-pad-(v/max)*(h-pad*2);
+  let g='';
+  for(let k=0;k<=2;k++){ const gy=pad+(h-pad*2)*k/2; const val=Math.round(max*(2-k)/2);
+    g+='<line x1="'+pad+'" y1="'+gy+'" x2="'+(w-pad)+'" y2="'+gy+'" stroke="#e5e7eb" stroke-width="1"/>';
+    g+='<text x="'+(pad-6)+'" y="'+(gy+3)+'" font-size="9" fill="#9ca3af" text-anchor="end">'+val+'</text>'; }
+  function lineOf(key,color){
+    const pts=series.map((s,i)=>X(i)+','+Y(s[key])).join(' ');
+    const dots=series.map((s,i)=>'<circle cx="'+X(i)+'" cy="'+Y(s[key])+'" r="2.5" fill="'+color+'"><title>'+s[key]+'</title></circle>').join('');
+    return '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
+  }
+  const step=n>8?Math.ceil(n/8):1;
+  const xl=series.map((s,i)=> (i%step===0||i===n-1) ? '<text x="'+X(i)+'" y="'+(h-pad+15)+'" font-size="9" fill="#9ca3af" text-anchor="middle">'+String(s.day).slice(5)+'</text>' : '').join('');
+  return '<svg viewBox="0 0 '+w+' '+h+'" class="w-full">'+g+lineOf('emails_created','#4f46e5')+lineOf('messages_received','#22c55e')+xl+'</svg>'+
+    '<div class="flex gap-4 justify-center text-xs text-gray-500 mt-2"><span><i class="fas fa-minus text-indigo-500"></i> Email dibuat</span><span><i class="fas fa-minus text-green-500"></i> Pesan diterima</span></div>';
 }
+function toggle(id,checked,label){ return '<label class="inline-flex items-center gap-3 cursor-pointer"><input id="'+id+'" type="checkbox" class="sr-only peer" '+(checked?'checked':'')+'/><span class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-checked:bg-indigo-600 rounded-full relative transition-colors after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></span>'+(label?'<span class="text-sm">'+label+'</span>':'')+'</label>'; }
 async function vDashboard(){
   view.innerHTML='<h1 class="text-2xl font-bold mb-6">Dashboard</h1><div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>'+
     '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5">'+
@@ -177,11 +183,11 @@ async function vSettings(){
     field('Nama Aplikasi','Nama brand yang tampil di web & admin.',inp('g_brand',s.brand_name))+
     field('Logo URL','Alamat gambar logo (opsional).',inp('g_logo',s.logo_url,'text','https://…'))+
     '<div class="flex flex-wrap gap-4">'+field('Warna Primer','Sidebar.',inp('g_c1',s.color_primary,'color'))+field('Sekunder','Tombol Create.',inp('g_c2',s.color_secondary,'color'))+field('Tersier','Tombol Random.',inp('g_c3',s.color_tertiary,'color'))+'</div>'+
-    field('Dark Mode','Tampilkan toggle gelap/terang.','<label class="inline-flex items-center gap-2"><input id="g_dark" type="checkbox" '+(s.dark_mode?'checked':'')+'/> Aktifkan</label>')+
+    field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
   card('IMAP','Mailbox catch-all yang menerima email semua domainmu.',
     field('Host','mis. imap.domain.com',inp('i_host',s.imap_host))+
-    '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+field('TLS','Implicit TLS.','<label class="inline-flex items-center gap-2 mt-1"><input id="i_tls" type="checkbox" '+(s.imap_tls?'checked':'')+'/> 993</label>')+'</div>'+
+    '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+field('TLS','Implicit TLS.',toggle('i_tls',s.imap_tls,'993'))+'</div>'+
     field('Username','User login mailbox.',inp('i_user',s.imap_user))+
     field('Password',(s.has_imap_pass?'Sudah tersimpan — kosongkan jika tak ingin ganti.':'Password mailbox (dienkripsi).'),'<input id="i_pass" type="password" placeholder="'+(s.has_imap_pass?'••••••':'')+'" class="'+INP+'"/>')+
     saveBtn('saveImap()'))+
@@ -199,8 +205,8 @@ async function vSettings(){
   card('Advance','API key & gembok halaman.',
     '<h4 class="text-sm font-semibold mb-1">API Keys</h4><p class="text-xs text-gray-400 mb-2">Untuk otomasi eksternal. <a href="/docs'+QS+'" target="_blank" class="text-indigo-600">Docs</a></p><div id="keyList" class="space-y-2 mb-3 max-w-lg"></div>'+
     '<div class="flex gap-2 mb-6 max-w-md"><input id="keyLabel" placeholder="label (mis. bot-signup)" class="flex-1 '+INP+'"/><button onclick="addKey()" class="bg-indigo-600 text-white px-4 rounded-lg">Buat</button></div>'+
-    '<h4 class="text-sm font-semibold mb-1">Lock</h4><p class="text-xs text-gray-400 mb-2">Gembok web publik dengan password.</p>'+
-    field('Aktifkan','','<label class="inline-flex items-center gap-2"><input id="lk_on" type="checkbox" '+(lk.enable?'checked':'')+'/> Gembok web</label>')+
+    '<h4 class="text-sm font-semibold mb-1">Kunci Web</h4><p class="text-xs text-gray-400 mb-2">Kunci web publik dengan password.</p>'+
+    field('Aktifkan','',toggle('lk_on',lk.enable,'Kunci web'))+
     field('Teks','Pesan di layar gembok.',inp('lk_text',lk.text||''))+
     field('Password','',inp('lk_pass',lk.password||''))+
     saveBtn('saveLock()'))+
