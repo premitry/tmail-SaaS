@@ -194,10 +194,14 @@ async function loadInbox(){
   const list = $('#inboxList'); const msgs = res.messages || [];
   status(msgs.length + ' email', 'text-green-500');
   if(!msgs.length){ list.innerHTML = '<div class="h-40 flex items-center justify-center text-gray-400">Menunggu email masuk…</div>'; return; }
-  list.innerHTML = msgs.map(m => '<div class="p-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 '+(m.read?'':'font-semibold')+'" onclick="openMsg(\\''+m.id+'\\')">'+
-    '<div class="flex justify-between gap-2"><div class="text-sm text-gray-800 dark:text-gray-200 truncate">'+escapeHtml(m.sender)+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+timeAgo(m.received_at)+'</div></div>'+
-    '<div class="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">'+escapeHtml(m.subject)+'</div>'+
-    '<div class="text-xs text-gray-400 mt-1 truncate">'+escapeHtml(m.preview||'')+'</div></div>').join('');
+  var header = '<div class="flex items-center gap-3 py-3 px-5 bg-gray-100 dark:bg-gray-800 text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400"><div class="w-1/2 md:w-3/12">Pengirim</div><div class="w-1/2 md:w-7/12">Subjek</div><div class="hidden md:flex md:w-2/12 justify-end">Waktu</div></div>';
+  list.innerHTML = header + msgs.map(function(m){
+    var em = escapeHtml(m.sender||''), nm = escapeHtml((String(m.sender||'').split('@')[0])||m.sender||'');
+    return '<div onclick="openMsg(\\''+m.id+'\\')" class="flex items-center gap-3 py-4 px-5 border-b border-dashed border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer '+(m.read?'':'font-semibold')+'">'+
+      '<div class="w-1/2 md:w-3/12 min-w-0"><div class="truncate text-sm text-gray-900 dark:text-gray-100">'+nm+'</div><div class="text-xs text-gray-500 truncate">'+em+'</div></div>'+
+      '<div class="w-1/2 md:w-7/12 truncate text-sm text-gray-700 dark:text-gray-300">'+escapeHtml(m.subject)+'</div>'+
+      '<div class="hidden md:flex md:w-2/12 justify-end text-xs text-gray-500">'+timeAgo(m.received_at)+'</div></div>';
+  }).join('');
 }
 async function openMsg(id){
   currentId = id;
