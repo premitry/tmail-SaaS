@@ -229,11 +229,13 @@ function connectWS(){
 }
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escapeAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+function fallbackCopy(t){ var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length); var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); status(ok?'tersalin!':'gagal copy', ok?'text-green-500':'text-red-500'); }
+function copyText(t){ if(!t) return; if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(t).then(function(){ status('tersalin!','text-green-500'); }).catch(function(){ fallbackCopy(t); }); } else { fallbackCopy(t); } }
 $('#btnCreate').onclick = () => createAddr($('#username').value.trim());
 $('#btnRandom').onclick = () => createAddr('');
 document.querySelectorAll('.act').forEach(b => b.onclick = () => {
   const a = b.dataset.act;
-  if(a==='copy'){ navigator.clipboard.writeText(addr); status('tersalin!','text-green-500'); }
+  if(a==='copy'){ copyText(addr); }
   if(a==='refresh'){ loadInbox(); }
   if(a==='new'){ showCreate(); }
   if(a==='clear'){ deleteAddr(); }
