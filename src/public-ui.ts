@@ -74,6 +74,7 @@ export function renderPublicPage(o: PublicOpts): string {
       <div class="relative"><select id="domain" class="w-full rounded-md py-3 px-4 bg-white/10 dark:bg-black/20 text-white appearance-none focus:outline-none cursor-pointer">${domainOptions}</select><i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/70"></i></div>
       <button id="btnCreate" class="w-full rounded-md py-3 px-4 text-white font-semibold" style="background-color:${c.secondary}">Create</button>
       <button id="btnRandom" class="w-full rounded-md py-3 px-4 text-white font-semibold" style="background-color:${c.tertiary}">Random</button>
+      <button id="btnCancel" onclick="cancelCreate()" class="w-full rounded-md py-2 px-4 bg-white/10 hover:bg-white/20 text-white text-sm" style="display:none">Batal</button>
     </div>
     <div id="activePanel" class="lg:max-w-xs lg:mx-auto w-full space-y-4 hidden">
       ${addrDropdown("rounded-md py-3 px-4 bg-white/10 dark:bg-black/20 text-white font-mono text-sm break-all")}
@@ -106,6 +107,7 @@ export function renderPublicPage(o: PublicOpts): string {
         <div class="grid grid-cols-2 md:grid-cols-1 gap-1 md:w-44">
           <button id="btnCreate" class="py-4 px-5 text-white font-semibold" style="background-color:${c.secondary}"><i class="fas fa-chevron-right mr-1"></i> Create</button>
           <button id="btnRandom" class="py-4 px-5 text-white font-semibold" style="background-color:${c.tertiary}"><i class="fas fa-random mr-1"></i> Random</button>
+          <button id="btnCancel" onclick="cancelCreate()" class="py-2 px-5 bg-black/20 hover:bg-black/30 text-white text-sm" style="display:none">Batal</button>
         </div>
       </div>
       <div id="activePanel" class="hidden flex-col md:flex-row items-stretch gap-4">
@@ -140,7 +142,7 @@ export function renderPublicPage(o: PublicOpts): string {
           <button id="btnCreate" class="py-4 px-6 text-white font-semibold" style="background-color:${c.secondary}">Create</button>
         </div>
         <div class="text-center text-white/70 py-2">atau</div>
-        <div class="flex justify-center"><button id="btnRandom" class="py-2 px-6 rounded-md text-white font-semibold" style="background-color:${c.tertiary}">Buat Email Acak</button></div>
+        <div class="flex justify-center gap-2"><button id="btnRandom" class="py-2 px-6 rounded-md text-white font-semibold" style="background-color:${c.tertiary}">Buat Email Acak</button><button id="btnCancel" onclick="cancelCreate()" class="py-2 px-4 rounded-md bg-white/10 hover:bg-white/20 text-white text-sm" style="display:none">Batal</button></div>
       </div>
       <div id="activePanel" class="hidden max-w-3xl mx-auto">
         ${addrDropdown("w-full bg-white/10 rounded-md py-4 px-5 text-white font-mono break-all")}
@@ -173,7 +175,8 @@ async function api(path, opts){ const r = await fetch(apiUrl(path), opts); retur
 const LD = CFG.panelDisplay || 'block';
 function setAddrText(){ var ab=$('#addrBox'); if(!ab) return; var sp=ab.querySelector('span'); if(sp){ sp.textContent=addr; } else { ab.textContent=addr; } }
 function showActive(){ $('#createPanel').style.display='none'; $('#activePanel').style.display=LD; setAddrText(); var iw=$('#inboxWrap'); if(iw) iw.style.display=''; }
-function showCreate(){ $('#activePanel').style.display='none'; $('#createPanel').style.display=LD; var iw=$('#inboxWrap'); if(iw) iw.style.display='none'; closeAddrMenu(); }
+function showCreate(){ $('#activePanel').style.display='none'; $('#createPanel').style.display=LD; var iw=$('#inboxWrap'); if(iw) iw.style.display='none'; var cb=$('#btnCancel'); if(cb) cb.style.display = addrs.length ? '' : 'none'; closeAddrMenu(); }
+function cancelCreate(){ if(addrs.length){ showActive(); loadInbox(); } }
 function renderAddrMenu(){ var m=$('#addrMenu'); if(!m) return; m.innerHTML = addrs.map(function(a){ return '<div onclick="setActiveAddr(\\''+a+'\\')" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-mono '+(a===addr?'font-bold':'')+'">'+escapeHtml(a)+'</div>'; }).join(''); }
 function toggleAddrMenu(){ renderAddrMenu(); var m=$('#addrMenu'); if(m) m.classList.toggle('hidden'); }
 function closeAddrMenu(){ var m=$('#addrMenu'); if(m) m.classList.add('hidden'); }

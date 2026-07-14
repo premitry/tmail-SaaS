@@ -179,15 +179,12 @@ async function pollBuyer(
     await client.login(user, pass);
     await client.selectInbox();
     const uids = await client.searchUids(lastUid);
-
-    if (lastUid === 0) {
-      const max = uids.length ? Math.max(...uids) : 0;
-      if (max > 0) await db.setLastUid(buyerId, max);
-      return 0; // baseline
-    }
-
-    let maxUid = lastUid;
-    for (const uid of uids.slice(0, MAX_PER_POLL)) {
+    if (!uids.length) return 0;
+    const overallMax = Math.max(...uids);
+    // Poll pertama (lastUid=0): ambil 10 email terbaru biar langsung kelihatan.
+    // Berikutnya: hanya email yang lebih baru dari lastUid.
+    const toFetch = lastUid === 0 ? uids.slice(-10) : uids;
+    for (const uid of toFetch.slice(0, MAX_PER_POLL)) {
       const raw = await client.fetchRaw(uid);
       if (raw) {
         const parsed = await PostalMime.parse(raw);
@@ -196,9 +193,8 @@ async function pollBuyer(
           stored++;
         }
       }
-      if (uid > maxUid) maxUid = uid;
     }
-    if (maxUid > lastUid) await db.setLastUid(buyerId, maxUid);
+    await db.setLastUid(buyerId, overallMax);
   } finally {
     await client.logout();
   }
@@ -225,5 +221,26 @@ export async function pollAllImap(env: Env): Promise<void> {
     } catch (e) {
       console.log(`IMAP poll ${buyer.email} error:`, (e as Error).message);
     }
+  }
+}
+
+/** Tarik email sekarang untuk 1 buyer (dipakai tombol admin / tes di dev). */
+export async function pollBuyerNow(env: Env, buyerId: string): Promise<{ ok: boolean; count?: number; error?: string }> {
+  const db = new DB(env.DB);
+  const st = await db.getBuyerSettings(buyerId);
+  if (!st || !st.imap_host || !st.imap_user) return { ok: false, error: "IMAP belum diisi" };
+  const domains = await db.activeDomainNames(buyerId);
+  if (!domains.length) return { ok: false, error: "belum ada domain aktif" };
+  const pass = await decryptSecret(env, st.imap_pass_enc);
+  if (!pass) return { ok: false, error: "password IMAP kosong" };
+  try {
+    const n = await withTimeout(
+      pollBuyer(env, db, buyerId, st.imap_host, st.imap_port, st.imap_user, pass, st.imap_tls !== 0, st.imap_last_uid, domains),
+      45000,
+    );
+    if (n > 0) await db.incrMessages(buyerId, n);
+    return { ok: true, count: n };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
   }
 }

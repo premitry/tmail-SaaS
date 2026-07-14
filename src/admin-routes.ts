@@ -6,7 +6,7 @@ import { getSessionCtx, login, sessionCookie, clearCookie, isSecure } from "./au
 import { renderLogin, renderAdminShell } from "./admin-ui";
 import { encryptSecret, decryptSecret } from "./crypto";
 import { provisionHostname, deleteHostname } from "./hostnames";
-import { testImapConnection } from "./imap";
+import { testImapConnection, pollBuyerNow } from "./imap";
 
 const json = (data: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), {
@@ -138,6 +138,10 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
     const tls = b.imap_tls === undefined ? st.imap_tls !== 0 : (b.imap_tls !== 0 && b.imap_tls !== "0");
     const r = await testImapConnection(host, Number(b.imap_port) || st.imap_port || 993, user, pass, tls);
     return json(r);
+  }
+
+  if (path === "/settings/imap-poll" && req.method === "POST") {
+    return json(await pollBuyerNow(env, buyerId));
   }
 
   if (path === "/keys" && req.method === "GET") return json({ keys: await db.listKeys(buyerId) });
