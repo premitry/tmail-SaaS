@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tmail-saas",
+  "account_id": "763d4f8aaa04e3a542daafd13b208af4",
   "main": "src/index.ts",
   "compatibility_date": "2025-07-01",
   "compatibility_flags": ["nodejs_compat"],
