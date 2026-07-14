@@ -383,13 +383,28 @@ async function submitCreateBuyer(){
   if(r.error){alert(r.error);return;}
   closeModal(); loadUsers(); toast('Buyer dibuat');
 }
-function modalEditBuyer(id){
-  const u=window.__U[id]; if(!u)return;
+function webSectionHtml(d,id){
+  var webHtml=(d.hostnames||[]).map(function(h){
+    var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
+    var active=h.status==='active';
+    var badge=active?'bg-green-100 text-green-700':(h.status==='manual'?'bg-gray-200 text-gray-600':'bg-amber-100 text-amber-700');
+    var apex=h.hostname.split('.').length<=2;
+    var dns=isSub?'<div class="text-[11px] text-green-600 mt-1">Subdomain '+esc(d.saasZone)+' — langsung aktif, tak perlu setting DNS</div>':(active?'':'<div class="text-[11px] text-gray-500 mt-1 bg-white dark:bg-gray-800 rounded p-2">Buyer set DNS: '+(apex?('A/ALIAS <b>'+esc(h.hostname)+'</b> → <b>'+esc(d.saasTarget)+'</b> (domain utama: pakai ALIAS / CNAME-flattening)'):('CNAME <b>'+esc(h.hostname)+'</b> → <b>'+esc(d.saasTarget)+'</b>'))+'</div>');
+    return '<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mb-1"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 text-sm truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dns+'<div class="flex gap-3 mt-1 text-xs">'+(isSub?'':'<button onclick="refreshHost(\''+id+'\',\''+h.id+'\')" class="text-blue-600">Cek status</button>')+'<button onclick="delHost(\''+id+'\',\''+h.id+'\')" class="text-red-600">Hapus</button></div></div>';
+  }).join('')||'<div class="text-xs text-gray-400 mb-1">Belum ada web domain</div>';
+  return '<div class="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3 mb-2"><h4 class="font-semibold text-sm mb-1"><i class="fas fa-globe mr-1"></i>Web Domain (alamat akses situs & /admin buyer)</h4><p class="text-xs text-gray-400 mb-2">Subdomain '+esc(d.saasZone||'')+' langsung aktif; domain sendiri buyer butuh CNAME.</p>'+webHtml+'<div class="flex gap-2 mt-2"><input id="newHost" placeholder="mail.buyera.com / buyera.com / nama.'+esc(d.saasZone||'')+'" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-2 px-3 text-sm"/><button onclick="addHost(\''+id+'\')" class="bg-indigo-600 text-white px-3 rounded-lg text-sm">Tambah</button></div></div>';
+}
+async function modalEditBuyer(id){
+  openModal('<div class="text-center text-gray-400 py-6">memuat…</div>', true);
+  const d=await api('/buyers/detail?id='+id);
+  if(d.error){ closeModal(); alert(d.error); return; }
+  window.__wRefresh=function(){ modalEditBuyer(id); };
   openModal('<h3 class="text-lg font-bold mb-4">Edit Buyer</h3>'+
-    field('Email','',inp('e_email',u.email,'email'))+
-    field('Nama','',inp('e_name',u.name||''))+
+    field('Email','',inp('e_email',d.user.email,'email'))+
+    field('Nama','',inp('e_name',d.user.name||''))+
     field('Password baru','Kosongkan jika tak ganti.',inp('e_pass','','text','password baru'))+
-    '<div class="flex gap-2 justify-end mt-2"><button onclick="closeModal()" class="px-4 py-2 rounded-lg border dark:border-gray-700">Batal</button><button onclick="submitEditBuyer(\''+id+'\')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Simpan</button></div>');
+    '<div class="flex gap-2 justify-end"><button onclick="closeModal()" class="px-4 py-2 rounded-lg border dark:border-gray-700">Batal</button><button onclick="submitEditBuyer(\''+id+'\')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Simpan</button></div>'+
+    webSectionHtml(d,id), true);
 }
 async function submitEditBuyer(id){
   const b={id,email:$('#e_email').value,name:$('#e_name').value}; const pw=$('#e_pass').value; if(pw)b.password=pw;
@@ -401,17 +416,9 @@ async function showDetail(id){
   openModal('<div class="text-center text-gray-400 py-6">memuat…</div>', true);
   const d=await api('/buyers/detail?id='+id);
   if(d.error){ openModal('<div class="text-red-500">'+esc(d.error)+'</div>'); return; }
+  window.__wRefresh=function(){ showDetail(id); };
   const created=new Date(d.user.created_at).toISOString().slice(0,10);
   const stat=(l,v)=>'<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center"><div class="text-lg font-bold">'+v+'</div><div class="text-xs text-gray-500">'+l+'</div></div>';
-  const webHtml=(d.hostnames||[]).map(function(h){
-    var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
-    var active=h.status==='active';
-    var badge=active?'bg-green-100 text-green-700':(h.status==='manual'?'bg-gray-200 text-gray-600':'bg-amber-100 text-amber-700');
-    var apex=h.hostname.split('.').length<=2;
-    var dns=isSub?'<div class="text-[11px] text-green-600 mt-1">Subdomain '+esc(d.saasZone)+' — langsung aktif, buyer tak perlu setting DNS</div>':(active?'':'<div class="text-[11px] text-gray-500 mt-1 bg-white dark:bg-gray-800 rounded p-2">Buyer set DNS: '+(apex?('A/ALIAS <b>'+esc(h.hostname)+'</b> → <b>'+esc(d.saasTarget)+'</b> (domain utama: pakai ALIAS / CNAME-flattening)'):('CNAME <b>'+esc(h.hostname)+'</b> → <b>'+esc(d.saasTarget)+'</b>'))+'</div>');
-    return '<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mb-1"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 text-sm truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dns+'<div class="flex gap-3 mt-1 text-xs">'+(isSub?'':'<button onclick="refreshHost(\''+id+'\',\''+h.id+'\')" class="text-blue-600">Cek status</button>')+'<button onclick="delHost(\''+id+'\',\''+h.id+'\')" class="text-red-600">Hapus</button></div></div>';
-  }).join('')||'<div class="text-xs text-gray-400 mb-1">Belum ada web domain</div>';
-  const webSection='<div class="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3 mb-3"><h4 class="font-semibold text-sm mb-1"><i class="fas fa-globe mr-1"></i>Web Domain (akses situs & /admin buyer)</h4><p class="text-xs text-gray-400 mb-2">Domain buat akses web buyer. Subdomain '+esc(d.saasZone||'')+' langsung aktif; domain sendiri butuh CNAME.</p>'+webHtml+'<div class="flex gap-2 mt-2"><input id="newHost" placeholder="mail.buyera.com / buyera.com / nama.'+esc(d.saasZone||'')+'" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-2 px-3 text-sm"/><button onclick="addHost(\''+id+'\')" class="bg-indigo-600 text-white px-3 rounded-lg text-sm">Tambah</button></div></div>';
   openModal(
     '<div class="flex justify-between items-start mb-4"><div><h3 class="text-lg font-bold">'+esc(d.user.email)+'</h3><div class="text-xs text-gray-400">'+esc(d.user.name||'')+' · '+esc(d.user.status)+'</div></div><button onclick="closeModal()" class="text-2xl leading-none text-gray-400">&times;</button></div>'+
     '<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">'+stat('Email dibuat',d.stats.emails)+stat('Pesan diterima',d.stats.messages)+stat('Domain',d.domains.length)+stat('Web',d.hostnames.length)+'</div>'+
@@ -419,13 +426,13 @@ async function showDetail(id){
       '<div><b>Dibuat:</b> '+created+'</div><div><b>IMAP:</b> '+(d.settings.has_imap?esc(d.settings.imap_host||'terisi'):'<span class=\"text-red-500\">belum</span>')+'</div>'+
       '<div><b>Tema:</b> '+esc(d.settings.theme)+' · <b>Bahasa:</b> '+esc(d.settings.lang)+'</div>'+
       '<div class="md:col-span-2"><b>Domain email:</b> '+(d.domains.map(x=>esc(x.domain)).join(', ')||'—')+'</div></div>'+
-    webSection+
+    webSectionHtml(d,id)+
     '<div class="max-w-md mx-auto">'+chartSVG(d.stats.series,140)+'</div>',
     true);
 }
-async function addHost(id){ var v=$('#newHost').value.trim(); if(!v)return; var r=await api('/buyers/hostname',{method:'POST',body:JSON.stringify({id:id,hostname:v})}); if(r.error){alert(r.error);return;} toast(r.warn?('Ditambah (catatan: '+r.warn+')'):'Web domain ditambah'); showDetail(id); }
-async function delHost(id,hid){ if(!confirm('Hapus web domain ini?'))return; await api('/buyers/hostname/delete',{method:'POST',body:JSON.stringify({id:id,hostnameId:hid})}); showDetail(id); }
-async function refreshHost(id,hid){ var r=await api('/buyers/hostname/refresh',{method:'POST',body:JSON.stringify({hostnameId:hid})}); toast('Status: '+(r.status||'?')); showDetail(id); }
+async function addHost(id){ var v=$('#newHost').value.trim(); if(!v)return; var r=await api('/buyers/hostname',{method:'POST',body:JSON.stringify({id:id,hostname:v})}); if(r.error){alert(r.error);return;} toast(r.warn?('Ditambah (catatan: '+r.warn+')'):'Web domain ditambah'); if(window.__wRefresh)window.__wRefresh(); }
+async function delHost(id,hid){ if(!confirm('Hapus web domain ini?'))return; await api('/buyers/hostname/delete',{method:'POST',body:JSON.stringify({id:id,hostnameId:hid})}); if(window.__wRefresh)window.__wRefresh(); }
+async function refreshHost(id,hid){ var r=await api('/buyers/hostname/refresh',{method:'POST',body:JSON.stringify({hostnameId:hid})}); toast('Status: '+(r.status||'?')); if(window.__wRefresh)window.__wRefresh(); }
 async function extend(id){ const days=prompt('Perpanjang berapa hari dari sekarang? (0 = tanpa batas)','30'); if(days==null)return; await api('/buyers/expiry',{method:'POST',body:JSON.stringify({id,days:+days})}); loadUsers(); }
 async function toggleUser(id,status){ await api('/buyers/status',{method:'POST',body:JSON.stringify({id,status})}); loadUsers(); }
 async function delUser(id){ if(confirm('Hapus buyer + semua datanya?')){ await api('/buyers/delete',{method:'POST',body:JSON.stringify({id})}); loadUsers(); } }
