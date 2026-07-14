@@ -52,11 +52,13 @@ export function renderPublicPage(o: PublicOpts): string {
   const socials = o.socials.map((s) =>
     `<a href="${esc(s.link)}" target="_blank" rel="noopener" class="ml-2 text-lg opacity-80 hover:opacity-100"><i class="${esc(s.icon)}"></i></a>`).join("");
   const domainOptions = o.domains.map((d) => `<option value="${esc(d)}" class="text-black">${esc(d)}</option>`).join("");
-  const config = JSON.stringify({ domains: o.domains, brand: o.brand, panelDisplay });
+  const config = JSON.stringify({ domains: o.domains, brand: o.brand, panelDisplay, twoPane: layout === "sidebar" });
   const darkBtn = `<button onclick="toggleDark()" class="text-lg" title="Tema"><i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline text-yellow-400"></i></button>`;
   const statusEl = `<span id="statusDot" class="text-xs text-gray-400"><i class="fas fa-circle text-[8px]"></i> <span id="statusText">idle</span></span>`;
 
-  const inboxArea = `
+  const inboxArea = layout === "sidebar" ? `
+    <div id="inboxList" class="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 min-h-[200px] lg:min-h-[440px] overflow-y-auto"></div>
+    <div id="msgView" class="w-full lg:w-2/3 min-h-[440px] flex flex-col"><div class="flex-1 flex items-center justify-center text-gray-300 dark:text-gray-600"><div class="text-center"><div class="text-5xl mb-3"><i class="far fa-envelope-open"></i></div><div>Pilih email untuk dibaca</div></div></div></div>` : `
     <div id="inboxList" class="w-full min-h-[320px] divide-y divide-gray-100 dark:divide-gray-800"></div>
     <div id="msgView" class="w-full min-h-[320px] flex-col" style="display:none"></div>`;
 
@@ -84,7 +86,7 @@ export function renderPublicPage(o: PublicOpts): string {
   </aside>
   <div class="flex-1 flex flex-col min-w-0">
     <nav class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-5 h-16 flex items-center justify-end gap-4">${statusEl}${darkBtn}</nav>
-    <main class="flex-1 bg-white dark:bg-gray-900" id="inboxWrap" style="display:none">${inboxArea}</main>
+    <main class="flex-1 lg:flex bg-white dark:bg-gray-900" id="inboxWrap" style="display:none">${inboxArea}</main>
     ${footer}
   </div>
 </div>`;
@@ -173,6 +175,7 @@ const $ = (s) => document.querySelector(s);
 function status(txt, color){ $('#statusText').textContent = txt; $('#statusDot').className = 'text-xs ' + (color||'text-gray-400'); }
 async function api(path, opts){ const r = await fetch(apiUrl(path), opts); return r.json(); }
 const LD = CFG.panelDisplay || 'block';
+const TWO = !!CFG.twoPane;
 function setAddrText(){ var ab=$('#addrBox'); if(!ab) return; var sp=ab.querySelector('span'); if(sp){ sp.textContent=addr; } else { ab.textContent=addr; } }
 function showActive(){ $('#createPanel').style.display='none'; $('#activePanel').style.display=LD; setAddrText(); var iw=$('#inboxWrap'); if(iw) iw.style.display=''; }
 function showCreate(){ $('#activePanel').style.display='none'; $('#createPanel').style.display=LD; var iw=$('#inboxWrap'); if(iw) iw.style.display='none'; var cb=$('#btnCancel'); if(cb) cb.style.display = addrs.length ? '' : 'none'; closeAddrMenu(); }
@@ -197,6 +200,15 @@ async function loadInbox(){
   const list = $('#inboxList'); const msgs = res.messages || [];
   status(msgs.length + ' email', 'text-green-500');
   if(!msgs.length){ list.innerHTML = '<div class="h-40 flex items-center justify-center text-gray-400">Menunggu email masuk…</div>'; return; }
+  if(TWO){
+    list.innerHTML = msgs.map(function(m){ var nm=escapeHtml((String(m.sender||'').split('@')[0])||m.sender||''), em=escapeHtml(m.sender||'');
+      return '<div onclick="openMsg(\\''+m.id+'\\')" class="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 '+(m.read?'':'font-semibold')+'">'+
+        '<div class="flex justify-between gap-2"><div class="text-sm text-gray-900 dark:text-gray-100 truncate">'+nm+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+timeAgo(m.received_at)+'</div></div>'+
+        '<div class="text-xs text-gray-500 truncate">'+em+'</div>'+
+        '<div class="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">'+escapeHtml(m.subject)+'</div></div>';
+    }).join('');
+    return;
+  }
   var header = '<div class="flex items-center gap-3 py-3 px-5 bg-gray-100 dark:bg-gray-800 text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400"><div class="w-1/2 md:w-3/12">Pengirim</div><div class="w-1/2 md:w-7/12">Subjek</div><div class="hidden md:flex md:w-2/12 justify-end">Waktu</div></div>';
   list.innerHTML = header + msgs.map(function(m){
     var em = escapeHtml(m.sender||''), nm = escapeHtml((String(m.sender||'').split('@')[0])||m.sender||'');
@@ -212,12 +224,13 @@ async function openMsg(id){
   if(res.error){ alert(res.error); return; }
   const body = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
   var mv=$('#msgView');
-  mv.innerHTML = '<div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">'+
-      '<button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali ke Inbox</button>'+
+  var backBtn = TWO ? '<span></span>' : '<button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali ke Inbox</button>';
+  mv.innerHTML = '<div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">'+backBtn+
       '<button onclick="delMsg(\\''+id+'\\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md">Delete</button></div>'+
     '<div class="p-4 border-b border-dashed border-gray-200 dark:border-gray-700"><div class="text-base text-gray-900 dark:text-gray-100">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400">'+escapeHtml(res.sender)+'</div></div>'+
     '<iframe class="flex-1 w-full bg-white min-h-[360px]" sandbox="allow-same-origin" srcdoc="'+escapeAttr(body)+'"></iframe>';
-  $('#inboxList').style.display='none'; mv.style.display='flex';
+  if(!TWO){ $('#inboxList').style.display='none'; }
+  mv.style.display='flex';
   loadInbox();
 }
 function backToList(){ var mv=$('#msgView'); if(mv) mv.style.display='none'; var l=$('#inboxList'); if(l) l.style.display=''; }
