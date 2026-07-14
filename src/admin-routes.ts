@@ -176,6 +176,13 @@ async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
 
   if (path === "/me") return json({ role: "owner", name: s.user.name, email: s.user.email, brand: "Owner Panel" });
 
+  if (path === "/profile" && req.method === "POST") {
+    const b = await body(req);
+    if (b.name !== undefined) await db.setName(s.user.id, String(b.name).slice(0, 60));
+    if (b.password) await db.setPassword(s.user.id, String(b.password));
+    return json({ ok: true });
+  }
+
   if (path === "/buyers" && req.method === "GET") return json({ buyers: await db.listBuyers() });
 
   if (path === "/buyers/detail") {
