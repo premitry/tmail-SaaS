@@ -31,18 +31,26 @@ export function renderLogin(brand: string, role: "owner" | "buyer", error = ""):
 }
 
 const SB_STYLE = `<style>
-#sb{transition:width .15s}
-.sbc #sb{width:4rem}
-.sbc #sb .lbl,.sbc #sb #brandName,.sbc #sb #userName{display:none}
-.sbc #sb .navlink,.sbc #sb #userBtn{justify-content:center}
-.sbc main{margin-left:4rem}
+#sb{transition:transform .2s,width .15s}
+#sbBackdrop{display:none}
+@media(min-width:768px){
+  .sbc #sb{width:4rem}
+  .sbc #sb .lbl,.sbc #sb #brandName,.sbc #sb #userName{display:none}
+  .sbc #sb .navlink,.sbc #sb #userBtn{justify-content:center}
+  .sbc main{margin-left:4rem}
+}
+@media(max-width:767px){
+  #sb{transform:translateX(-100%);width:15rem}
+  body.sb-open #sb{transform:translateX(0)}
+  body.sb-open #sbBackdrop{display:block}
+}
 </style>`;
 
 export function renderAdminShell(brand: string): string {
   return `${head(brand + " — Admin", SB_STYLE)}
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 <div class="flex min-h-screen">
-  <aside id="sb" class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 z-20">
+  <aside id="sb" class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 z-30">
     <div class="h-16 flex items-center gap-2 px-4 border-b border-gray-200 dark:border-gray-800 font-bold text-lg overflow-hidden">
       <span class="text-2xl">📮</span><span id="brandName" class="truncate">${esc(brand)}</span>
     </div>
@@ -57,16 +65,17 @@ export function renderAdminShell(brand: string): string {
       </div>
     </div>
   </aside>
-  <main class="flex-1 ml-60">
-    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 px-5 sticky top-0 z-10">
-      <button onclick="toggleSidebar()" title="Kecilkan / lebarkan sidebar" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fas fa-bars"></i></button>
+  <div id="sbBackdrop" onclick="closeDrawer()" class="fixed inset-0 bg-black/40 z-20"></div>
+  <main class="flex-1 md:ml-60 min-w-0">
+    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 px-4 md:px-5 sticky top-0 z-10">
+      <button onclick="toggleSidebar()" title="Menu / kecilkan sidebar" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fas fa-bars"></i></button>
       <div class="ml-auto"></div>
       <button onclick="toggleDark()" title="Tema gelap/terang" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg">
         <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
       </button>
     </header>
     <div id="banner"></div>
-    <div id="view" class="p-8 max-w-4xl">Memuat…</div>
+    <div id="view" class="p-4 md:p-8 max-w-4xl mx-auto">Memuat…</div>
   </main>
 </div>
 <div id="modalRoot"></div>
@@ -94,8 +103,12 @@ function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,
 function toast(m){ const d=document.createElement('div'); d.textContent=m; d.className='fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50'; document.body.appendChild(d); setTimeout(()=>d.remove(),2000); }
 function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60)return s+'d'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'j'; return Math.floor(s/86400)+'h'; }
 
-/* ---- sidebar collapse ---- */
-function toggleSidebar(){ document.body.classList.toggle('sbc'); localStorage.setItem('sbc', document.body.classList.contains('sbc')?'1':'0'); }
+/* ---- sidebar: collapse (desktop) / drawer (HP) ---- */
+function toggleSidebar(){
+  if(window.innerWidth < 768){ document.body.classList.toggle('sb-open'); }
+  else { document.body.classList.toggle('sbc'); localStorage.setItem('sbc', document.body.classList.contains('sbc')?'1':'0'); }
+}
+function closeDrawer(){ document.body.classList.remove('sb-open'); }
 if(localStorage.getItem('sbc')==='1') document.body.classList.add('sbc');
 
 /* ---- komponen kecil ---- */
@@ -398,7 +411,7 @@ async function loginAs(id){ const r=await api('/buyers/login-as',{method:'POST',
 
 /* ============ router ============ */
 const ROUTES={ '#dashboard':vDashboard, '#inbox':vInbox, '#domains':vDomains, '#settings':vSettings, '#profile':vProfile, '#users':vUsers };
-function route(){ let hash=location.hash||(ME.role==='owner'?'#users':'#dashboard'); if(!ROUTES[hash])hash=(ME.role==='owner'?'#users':'#dashboard'); setActive(hash); (ROUTES[hash]||(()=>view.innerHTML='404'))(); }
+function route(){ closeDrawer(); let hash=location.hash||(ME.role==='owner'?'#users':'#dashboard'); if(!ROUTES[hash])hash=(ME.role==='owner'?'#users':'#dashboard'); setActive(hash); (ROUTES[hash]||(()=>view.innerHTML='404'))(); }
 window.addEventListener('hashchange', route);
 
 (async ()=>{
