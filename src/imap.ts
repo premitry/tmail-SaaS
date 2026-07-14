@@ -128,6 +128,25 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
+/** Tes koneksi IMAP: connect → login → SELECT INBOX. Dipakai admin sebelum simpan. */
+export async function testImapConnection(
+  host: string, port: number, user: string, pass: string, tls: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  const client = new ImapClient(host, port || 993, tls);
+  try {
+    await withTimeout((async () => {
+      await client.connect();
+      await client.login(user, pass);
+      await client.selectInbox();
+    })(), 20000);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  } finally {
+    try { await client.logout(); } catch { /* ignore */ }
+  }
+}
+
 /** Penerima yang cocok dengan salah satu domain aktif buyer. */
 function recipientsFor(parsed: any, domains: string[]): string[] {
   const set = new Set<string>();

@@ -4,8 +4,9 @@ import type { Env, Tenant, SessionCtx } from "./types";
 import { DB } from "./db";
 import { getSessionCtx, login, sessionCookie, clearCookie, isSecure } from "./auth";
 import { renderLogin, renderAdminShell } from "./admin-ui";
-import { encryptSecret } from "./crypto";
+import { encryptSecret, decryptSecret } from "./crypto";
 import { provisionHostname, deleteHostname } from "./hostnames";
+import { testImapConnection } from "./imap";
 
 const json = (data: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), {
@@ -125,6 +126,18 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
     const st = await db.ensureBuyerSettings(buyerId);
     const { imap_pass_enc, ...safe } = st;
     return json({ ok: true, settings: { ...safe, has_imap_pass: !!imap_pass_enc } });
+  }
+
+  if (path === "/settings/imap-test" && req.method === "POST") {
+    const b = await body(req);
+    const st = await db.ensureBuyerSettings(buyerId);
+    const pass = b.imap_pass ? String(b.imap_pass) : await decryptSecret(env, st.imap_pass_enc);
+    const host = String(b.imap_host || st.imap_host);
+    const user = String(b.imap_user || st.imap_user);
+    if (!host || !user || !pass) return json({ ok: false, error: "host/username/password belum lengkap" });
+    const tls = b.imap_tls === undefined ? st.imap_tls !== 0 : (b.imap_tls !== 0 && b.imap_tls !== "0");
+    const r = await testImapConnection(host, Number(b.imap_port) || st.imap_port || 993, user, pass, tls);
+    return json(r);
   }
 
   if (path === "/keys" && req.method === "GET") return json({ keys: await db.listKeys(buyerId) });
