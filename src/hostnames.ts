@@ -6,6 +6,12 @@ const CF_API = "https://api.cloudflare.com/client/v4";
 
 export async function provisionHostname(env: Env, hostname: string):
   Promise<{ cfId: string; status: string; error?: string }> {
+  const h = hostname.trim().toLowerCase();
+  // Subdomain di bawah SAAS_ZONE (mis. buyera.imapku.icu) sudah ditangani wildcard
+  // route + DNS, jadi langsung aktif tanpa perlu custom hostname.
+  if (env.SAAS_ZONE && h.endsWith("." + env.SAAS_ZONE.toLowerCase())) {
+    return { cfId: "", status: "active" };
+  }
   if (!env.CF_API_TOKEN || !env.CF_ZONE_ID) {
     return { cfId: "", status: "manual" };
   }

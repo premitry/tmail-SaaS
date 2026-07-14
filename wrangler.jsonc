@@ -10,7 +10,9 @@
     // Saat tes lokal/VPS tanpa DNS, pakai override ?__tenant=owner / ?__tenant=<email-buyer>.
     "PLATFORM_HOST": "tmail-saas.julianspes.workers.dev",
     "INBOX_TTL_MINUTES": "1440",
-    "BRAND_NAME": "TMail"
+    "BRAND_NAME": "TMail",
+    "CF_ZONE_ID": "1a1c237fcf6a2de92f4af805c6e608be",
+    "SAAS_ZONE": "imapku.icu"
     // Secret (set via `wrangler secret put`): OWNER_EMAIL, OWNER_PASSWORD,
     // ENCRYPTION_KEY, dan opsional CF_API_TOKEN, CF_ZONE_ID untuk custom hostname.
   },

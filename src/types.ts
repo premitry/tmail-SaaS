@@ -16,6 +16,7 @@ export interface Env {
   // Opsional: provisioning Custom Hostname (Cloudflare for SaaS)
   CF_API_TOKEN?: string;
   CF_ZONE_ID?: string;
+  SAAS_ZONE?: string;   // zona induk untuk wildcard subdomain (mis. imapku.icu)
 }
 
 export interface UserRow {
