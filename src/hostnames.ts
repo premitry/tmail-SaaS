@@ -31,6 +31,23 @@ export async function provisionHostname(env: Env, hostname: string):
   }
 }
 
+/** Cek status custom hostname di Cloudflare (untuk refresh pending→active). */
+export async function getHostnameStatus(env: Env, cfId: string): Promise<string | null> {
+  if (!env.CF_API_TOKEN || !env.CF_ZONE_ID || !cfId) return null;
+  try {
+    const r = await fetch(`${CF_API}/zones/${env.CF_ZONE_ID}/custom_hostnames/${cfId}`, {
+      headers: { "authorization": `Bearer ${env.CF_API_TOKEN}` },
+    });
+    const data = (await r.json()) as any;
+    if (!data.success) return null;
+    // gabungkan status hostname + ssl
+    const ssl = data.result.ssl?.status;
+    return ssl === "active" ? "active" : (data.result.status || "pending");
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteHostname(env: Env, cfId: string): Promise<void> {
   if (!env.CF_API_TOKEN || !env.CF_ZONE_ID || !cfId) return;
   try {

@@ -5,7 +5,7 @@ import { DB } from "./db";
 import { getSessionCtx, login, sessionCookie, clearCookie, isSecure } from "./auth";
 import { renderLogin, renderAdminShell } from "./admin-ui";
 import { encryptSecret, decryptSecret } from "./crypto";
-import { provisionHostname, deleteHostname } from "./hostnames";
+import { provisionHostname, deleteHostname, getHostnameStatus } from "./hostnames";
 import { testImapConnection, pollBuyerNow } from "./imap";
 
 const json = (data: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -189,7 +189,35 @@ async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
       stats: await db.getStats(id),
       domains: await db.listDomains(id),
       hostnames: await db.listHostnames(id),
+      saasTarget: env.SAAS_ZONE ? "saas." + env.SAAS_ZONE : "",
+      saasZone: env.SAAS_ZONE || "",
     });
+  }
+
+  if (path === "/buyers/hostname" && req.method === "POST") {
+    const b = await body(req);
+    if (!b.id || !b.hostname) return json({ error: "id & hostname wajib" });
+    const prov = await provisionHostname(env, String(b.hostname));
+    const r = await db.addHostname(b.id, String(b.hostname), prov.cfId, prov.status);
+    if (!r.ok) return json({ error: r.error });
+    return json({ ok: true, status: prov.status, target: env.SAAS_ZONE ? "saas." + env.SAAS_ZONE : "", warn: prov.error });
+  }
+  if (path === "/buyers/hostname/delete") {
+    const b = await body(req);
+    const removed = await db.removeHostname(b.id, b.hostnameId);
+    if (removed?.cf_hostname_id) await deleteHostname(env, removed.cf_hostname_id);
+    return json({ ok: true });
+  }
+  if (path === "/buyers/hostname/refresh") {
+    const b = await body(req);
+    const h = await db.getHostname(b.hostnameId);
+    if (!h) return json({ error: "hostname tidak ditemukan" }, 404);
+    if (h.cf_hostname_id) {
+      const st = await getHostnameStatus(env, h.cf_hostname_id);
+      if (st) await db.setHostnameStatus(h.id, st);
+      return json({ ok: true, status: st || h.status });
+    }
+    return json({ ok: true, status: h.status });
   }
 
   if (path === "/buyers" && req.method === "POST") {

@@ -168,6 +168,12 @@ export class DB {
     if (row) await this.d1.prepare(`DELETE FROM hostnames WHERE id = ?`).bind(id).run();
     return row;
   }
+  async setHostnameStatus(id: string, status: string): Promise<void> {
+    await this.d1.prepare(`UPDATE hostnames SET status = ? WHERE id = ?`).bind(status, id).run();
+  }
+  async getHostname(id: string): Promise<HostnameRow | null> {
+    return await this.d1.prepare(`SELECT * FROM hostnames WHERE id = ?`).bind(id).first<HostnameRow>();
+  }
   async findBuyerIdByHostname(hostname: string): Promise<string | null> {
     const r = await this.d1.prepare(`SELECT buyer_id FROM hostnames WHERE hostname = ?`)
       .bind(hostname.toLowerCase()).first<{ buyer_id: string }>();
