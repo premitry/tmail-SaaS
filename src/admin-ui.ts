@@ -11,20 +11,24 @@ export function renderLogin(brand: string, role: "owner" | "buyer", error = ""):
       <div class="text-4xl mb-2">${role === "owner" ? "🛡️" : "📮"}</div>
       <h1 class="text-xl font-bold">${esc(title)}</h1>
     </div>
-    ${error ? `<div class="bg-red-100 text-red-700 text-sm p-3 rounded-lg">${esc(error)}</div>` : ""}
+    <div id="loginErr" class="hidden bg-red-100 text-red-700 text-sm p-3 rounded-lg text-center">${error ? esc(error) : ""}</div>
     <input name="email" type="email" placeholder="Email" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
     <input name="password" type="password" placeholder="Password" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
     <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg">Masuk</button>
   </form>
   <script>
+    var _et;
+    function showErr(m){ var e=document.getElementById('loginErr'); e.textContent=m; e.classList.remove('hidden'); clearTimeout(_et); _et=setTimeout(function(){ e.classList.add('hidden'); }, 3000); }
     document.getElementById('f').onsubmit = async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      const r = await fetch('/admin/login' + location.search, { method:'POST', headers:{'content-type':'application/json'},
-        body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }) });
-      const d = await r.json();
-      if(d.ok) location.href = '/admin' + location.search;
-      else { document.querySelector('h1').insertAdjacentHTML('afterend','<div class="bg-red-100 text-red-700 text-sm p-3 rounded-lg mt-3">'+(d.error||'gagal')+'</div>'); }
+      try {
+        const r = await fetch('/admin/login' + location.search, { method:'POST', headers:{'content-type':'application/json'},
+          body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }) });
+        const d = await r.json();
+        if(d.ok) location.href = '/admin' + location.search;
+        else showErr(d.error || 'gagal');
+      } catch(_) { showErr('gagal terhubung'); }
     };
   </script>
 </body></html>`;
