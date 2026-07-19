@@ -92,7 +92,7 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
     const st = await db.ensureBuyerSettings(buyerId);
     const days = s.user.expires_at ? Math.ceil((s.user.expires_at - Date.now()) / 86400000) : null;
     return json({
-      role: "buyer", name: s.user.name, email: s.user.email, brand: st.brand_name,
+      role: "buyer", name: s.user.name, email: s.user.email, username: s.user.username || "", brand: st.brand_name,
       expiresInDays: days, impersonating: !!s.impersonatorId,
     });
   }
@@ -162,6 +162,8 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
 
   if (path === "/profile" && req.method === "POST") {
     const b = await body(req);
+    if (b.username !== undefined) { const r = await db.setUsername(buyerId, String(b.username)); if (!r.ok) return json({ error: r.error }); }
+    if (b.email !== undefined && String(b.email) !== s.user.email) { const r = await db.setEmail(buyerId, String(b.email)); if (!r.ok) return json({ error: r.error }); }
     if (b.name !== undefined) await db.setName(buyerId, String(b.name).slice(0, 60));
     if (b.password) await db.setPassword(buyerId, String(b.password));
     return json({ ok: true });
@@ -206,10 +208,12 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
 async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx): Promise<Response> {
   const path = url.pathname.replace("/admin/api", "");
 
-  if (path === "/me") return json({ role: "owner", name: s.user.name, email: s.user.email, brand: "Owner Panel" });
+  if (path === "/me") return json({ role: "owner", name: s.user.name, email: s.user.email, username: s.user.username || "", brand: "Owner Panel" });
 
   if (path === "/profile" && req.method === "POST") {
     const b = await body(req);
+    if (b.username !== undefined) { const r = await db.setUsername(s.user.id, String(b.username)); if (!r.ok) return json({ error: r.error }); }
+    if (b.email !== undefined && String(b.email) !== s.user.email) { const r = await db.setEmail(s.user.id, String(b.email)); if (!r.ok) return json({ error: r.error }); }
     if (b.name !== undefined) await db.setName(s.user.id, String(b.name).slice(0, 60));
     if (b.password) await db.setPassword(s.user.id, String(b.password));
     return json({ ok: true });

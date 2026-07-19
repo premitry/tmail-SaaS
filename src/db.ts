@@ -30,6 +30,21 @@ export class DB {
     return await this.d1.prepare(`SELECT * FROM users WHERE email = ?`)
       .bind(email.toLowerCase()).first<UserRow>();
   }
+  // Login pakai email ATAU username.
+  async getUserByEmailOrUsername(id: string): Promise<UserRow | null> {
+    const v = (id || "").trim().toLowerCase();
+    return await this.d1.prepare(`SELECT * FROM users WHERE email = ? OR username = ?`)
+      .bind(v, v).first<UserRow>();
+  }
+  async setUsername(id: string, username: string): Promise<{ ok: boolean; error?: string }> {
+    const u = (username || "").trim().toLowerCase();
+    if (u === "") { await this.d1.prepare(`UPDATE users SET username = NULL WHERE id = ?`).bind(id).run(); return { ok: true }; }
+    if (!/^[a-z0-9._-]{3,30}$/.test(u)) return { ok: false, error: "username 3-30 karakter (huruf/angka . _ -)" };
+    const dup = await this.d1.prepare(`SELECT id FROM users WHERE username = ? AND id != ?`).bind(u, id).first();
+    if (dup) return { ok: false, error: "username sudah dipakai" };
+    await this.d1.prepare(`UPDATE users SET username = ? WHERE id = ?`).bind(u, id).run();
+    return { ok: true };
+  }
   async getUserById(id: string): Promise<UserRow | null> {
     return await this.d1.prepare(`SELECT * FROM users WHERE id = ?`).bind(id).first<UserRow>();
   }

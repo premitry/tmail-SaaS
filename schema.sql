@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   id          TEXT PRIMARY KEY,
   role        TEXT NOT NULL DEFAULT 'buyer',   -- 'owner' | 'buyer'
   email       TEXT NOT NULL UNIQUE,
+  username    TEXT UNIQUE,                      -- login alternatif (opsional)
   pass_hash   TEXT NOT NULL,
   name        TEXT NOT NULL DEFAULT '',
   status      TEXT NOT NULL DEFAULT 'active',  -- active | suspended | expired

@@ -37,7 +37,7 @@ export async function getSessionCtx(req: Request, db: DB): Promise<SessionCtx | 
 
 export async function login(db: DB, email: string, password: string, impersonatorId: string | null = null):
   Promise<{ ok: boolean; sessionId?: string; error?: string }> {
-  const user = await db.getUserByEmail(email);
+  const user = await db.getUserByEmailOrUsername(email);
   if (!user) return { ok: false, error: "email atau password salah" };
   if (!(await verifyPassword(password, user.pass_hash))) return { ok: false, error: "email atau password salah" };
   if (user.role === "buyer" && user.status !== "active") {

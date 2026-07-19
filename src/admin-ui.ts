@@ -12,7 +12,7 @@ export function renderLogin(brand: string, role: "owner" | "buyer", error = ""):
       <h1 class="text-xl font-bold">${esc(title)}</h1>
     </div>
     <div id="loginErr" class="hidden bg-red-100 text-red-700 text-sm p-3 rounded-lg text-center">${error ? esc(error) : ""}</div>
-    <input name="email" type="email" placeholder="Email" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <input name="email" type="email" placeholder="Email atau username" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
     <input name="password" type="password" placeholder="Password" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
     <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg">Masuk</button>
   </form>
@@ -367,8 +367,13 @@ async function doExport(){ const d=await api('/export'); const blob=new Blob([JS
 async function doImport(el){ const f=el.files[0]; if(!f)return; const t=await f.text(); const r=await api('/import',{method:'POST',body:t}); if(r.error)alert(r.error); else toast('Import selesai'); }
 
 /* ============ PROFILE ============ */
-function vProfile(){ view.innerHTML='<h1 class="text-2xl font-bold mb-6">Profile</h1>'+card('Akun','Ubah nama & password.',field('Nama','',inp('p_name',ME.name))+field('Password baru','Kosongkan jika tak ganti.',inp('p_pass','','password'))+'<button onclick="saveProfile()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg">Simpan</button>'); }
-async function saveProfile(){ const b={name:$('#p_name').value}; const pw=$('#p_pass').value; if(pw)b.password=pw; const r=await api('/profile',{method:'POST',body:JSON.stringify(b)}); if(r.ok){toast('Tersimpan');ME.name=b.name;$('#userName').textContent=b.name;} }
+function vProfile(){ view.innerHTML='<h1 class="text-2xl font-bold mb-6">Profile</h1>'+card('Akun','Bisa login pakai email ATAU username.',
+  field('Username','Buat login selain email (opsional). Kosongkan = tanpa username.',inp('p_user',ME.username||''))+
+  field('Email','',inp('p_email',ME.email||'','email'))+
+  field('Nama','',inp('p_name',ME.name||''))+
+  field('Password baru','Kosongkan jika tak ganti.',inp('p_pass','','password'))+
+  '<button onclick="saveProfile()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg">Simpan</button>'); }
+async function saveProfile(){ const b={name:$('#p_name').value,username:$('#p_user').value,email:$('#p_email').value}; const pw=$('#p_pass').value; if(pw)b.password=pw; const r=await api('/profile',{method:'POST',body:JSON.stringify(b)}); if(r.error){alert(r.error);return;} toast('Tersimpan'); ME.name=b.name; ME.email=b.email; ME.username=b.username; $('#userName').textContent=b.name||b.username||b.email; }
 
 /* ============ USERS (owner) — card + popup ============ */
 function vUsers(){
