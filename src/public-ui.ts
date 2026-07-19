@@ -262,3 +262,30 @@ setInterval(()=>{ if(addr) loadInbox(); }, 15000);
 </script>
 </body></html>`;
 }
+
+// Layar kunci (Lock / Kunci Web) — gate password sebelum akses situs.
+export function renderLockScreen(brand: string, logoUrl: string, faviconUrl: string, text: string, primary: string): string {
+  const logo = logoUrl || DEFAULT_LOGO;
+  const favicon = faviconUrl || DEFAULT_LOGO;
+  return `${head(brand + " — Terkunci", "", favicon)}
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center px-4">
+  <form id="lf" class="bg-gray-800 w-full max-w-sm rounded-2xl shadow-xl border border-gray-700 p-8 text-center space-y-4">
+    <img src="${esc(logo)}" class="h-12 mx-auto object-contain" />
+    <div class="text-4xl">🔒</div>
+    <div class="text-sm text-gray-300">${esc(text || "Situs ini dikunci. Masukkan password untuk lanjut.")}</div>
+    <div id="le" class="hidden bg-red-500/20 text-red-300 text-sm p-2 rounded"></div>
+    <input id="lp" type="password" placeholder="Password" class="w-full rounded-lg bg-gray-900 border border-gray-700 py-2.5 px-4 focus:outline-none" />
+    <button class="w-full text-white font-semibold py-2.5 rounded-lg" style="background-color:${primary}">Buka</button>
+  </form>
+  <script>
+    document.getElementById('lf').onsubmit=async function(e){ e.preventDefault();
+      try{
+        var r=await fetch('/api/unlock'+location.search,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:document.getElementById('lp').value})});
+        var d=await r.json();
+        if(d.ok){ location.reload(); return; }
+        var le=document.getElementById('le'); le.textContent=d.error||'Password salah'; le.classList.remove('hidden');
+      }catch(_){ }
+    };
+  </script>
+</body></html>`;
+}

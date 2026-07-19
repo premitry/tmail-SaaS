@@ -1,8 +1,9 @@
 // Handler web publik temp-mail + visitor API + WebSocket. Tenant = buyer (by host).
 import type { Env, Tenant } from "./types";
 import { DB } from "./db";
-import { renderPublicPage } from "./public-ui";
+import { renderPublicPage, renderLockScreen } from "./public-ui";
 import { renderDocs } from "./docs";
+import { parseCookies } from "./auth";
 import { inboxStub, genLocalPart } from "./store";
 import { watcherStub } from "./watcher";
 import { MANTIS_PATTERN } from "./assets";
@@ -56,6 +57,28 @@ export async function handlePublic(
     return new Response(`<!doctype html><meta charset=utf-8><body style="font-family:sans-serif;text-align:center;padding:60px">
       <h1>🚫 Layanan tidak aktif</h1><p>${buyer.status === "expired" ? "Langganan sudah habis." : "Akun disuspend."}</p></body>`,
       { status: 403, headers: { "content-type": "text/html; charset=utf-8" } });
+  }
+
+  // ── Lock (Kunci Web): gate password sebelum akses situs ──
+  const lock = safeJson<any>(st.lock_json, {});
+  if (lock && lock.enable && lock.password && path !== "/favicon.svg" && path !== "/favicon.ico" && path !== "/assets/mantis-pattern.png") {
+    if (path === "/api/unlock" && req.method === "POST") {
+      const b = (await req.json().catch(() => ({}))) as any;
+      if (String(b.password || "") === String(lock.password)) {
+        const secure = url.protocol === "https:";
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: {
+            "content-type": "application/json",
+            "set-cookie": `tmlock=${encodeURIComponent(String(lock.password))}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800${secure ? "; Secure" : ""}`,
+          },
+        });
+      }
+      return json({ ok: false, error: "Password salah" }, 401);
+    }
+    const unlocked = parseCookies(req)["tmlock"] === String(lock.password);
+    if (!unlocked) {
+      return html(renderLockScreen(st.brand_name, st.logo_url, st.favicon_url, lock.text || "", st.color_primary));
+    }
   }
 
   const domains = await db.activeDomainNames(buyer.id);
