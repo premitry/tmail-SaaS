@@ -51,7 +51,7 @@ export async function handleAdmin(req: Request, url: URL, env: Env, db: DB, tena
     const b = await body<{ email: string; password: string }>(req);
     const res = await login(db, b.email || "", b.password || "");
     if (!res.ok) return json({ ok: false, error: res.error });
-    const user = await db.getUserByEmail(b.email);
+    const user = await db.getUserByEmailOrUsername(b.email);
     // pastikan role cocok dengan konteks host login
     if (loginRole === "owner" && user?.role !== "owner") return json({ ok: false, error: "bukan akun owner" });
     return json({ ok: true }, 200, { "set-cookie": sessionCookie(res.sessionId!, secure) });
