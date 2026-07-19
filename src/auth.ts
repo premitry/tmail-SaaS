@@ -64,7 +64,8 @@ export async function resolveTenant(req: Request, url: URL, env: Env, db: DB): P
   } else {
     const host = (req.headers.get("host") || "").toLowerCase().split(":")[0];
     const platform = (env.PLATFORM_HOST || "").toLowerCase().split(":")[0];
-    if (host && platform && host === platform) return { kind: "owner" };
+    // Owner panel: PLATFORM_HOST atau host default *.workers.dev.
+    if (host && ((platform && host === platform) || host.endsWith(".workers.dev"))) return { kind: "owner" };
     buyerId = await db.findBuyerIdByHostname(host);
   }
   if (!buyerId) return { kind: "unknown" };

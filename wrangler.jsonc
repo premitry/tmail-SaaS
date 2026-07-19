@@ -9,7 +9,7 @@
   "vars": {
     // Host untuk panel OWNER (superadmin). Host lain diperlakukan sebagai domain buyer.
     // Saat tes lokal/VPS tanpa DNS, pakai override ?__tenant=owner / ?__tenant=<email-buyer>.
-    "PLATFORM_HOST": "tmail-saas.julianspes.workers.dev",
+    "PLATFORM_HOST": "panel.imapku.icu",
     "INBOX_TTL_MINUTES": "1440",
     "BRAND_NAME": "TMail",
     "CF_ZONE_ID": "1a1c237fcf6a2de92f4af805c6e608be",
