@@ -27,10 +27,16 @@
   ],
 
   "durable_objects": {
-    "bindings": [{ "name": "MAILBOX", "class_name": "Mailbox" }]
+    "bindings": [
+      { "name": "MAILBOX", "class_name": "Mailbox" },
+      { "name": "WATCHER", "class_name": "Watcher" }
+    ]
   },
 
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Mailbox"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Mailbox"] },
+    { "tag": "v2", "new_sqlite_classes": ["Watcher"] }
+  ],
 
   // Poll IMAP tiap menit + cek masa aktif buyer.
   "triggers": { "crons": ["* * * * *"] },

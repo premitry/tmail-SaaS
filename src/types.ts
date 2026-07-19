@@ -3,6 +3,7 @@
 export interface Env {
   DB: D1Database;
   MAILBOX: DurableObjectNamespace;
+  WATCHER: DurableObjectNamespace;
 
   PLATFORM_HOST: string;        // host panel owner (superadmin)
   INBOX_TTL_MINUTES: string;    // masa simpan email di inbox

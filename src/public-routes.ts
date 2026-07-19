@@ -4,6 +4,7 @@ import { DB } from "./db";
 import { renderPublicPage } from "./public-ui";
 import { renderDocs } from "./docs";
 import { inboxStub, genLocalPart } from "./store";
+import { watcherStub } from "./watcher";
 import { MANTIS_PATTERN } from "./assets";
 
 function dataUrlToResponse(dataUrl: string, contentType: string): Response {
@@ -77,6 +78,7 @@ export async function handlePublic(
     const a = url.searchParams.get("a");
     if (!validAddress(a, domains)) return new Response("bad address", { status: 400 });
     if (req.headers.get("Upgrade") !== "websocket") return new Response("expected websocket", { status: 426 });
+    ctx.waitUntil(watcherStub(env, buyer.id).ping(buyer.id, true).catch(() => {}));
     const ns = env.MAILBOX;
     const stub = ns.get(ns.idFromName(a.toLowerCase()));
     return stub.fetch(req);
@@ -103,7 +105,10 @@ export async function handlePublic(
   if (["/api/inbox", "/api/message", "/api/delete", "/api/clear"].includes(path)) {
     if (!validAddress(addr, domains)) return json({ error: "alamat tidak valid" }, 400);
     const stub = inboxStub(env, addr);
-    if (path === "/api/inbox") return json({ address: addr, messages: await stub.list() });
+    if (path === "/api/inbox") {
+      ctx.waitUntil(watcherStub(env, buyer.id).ping(buyer.id, true).catch(() => {}));
+      return json({ address: addr, messages: await stub.list() });
+    }
     if (path === "/api/message") {
       const id = url.searchParams.get("id");
       if (!id) return json({ error: "id kosong" }, 400);
