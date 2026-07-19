@@ -195,7 +195,9 @@ async function loadMyWebDomain(){
     return '<div class="mb-2 last:mb-0"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dns+'</div>';
   }).join('');
   box.innerHTML='<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6"><h3 class="font-semibold mb-1"><i class="fas fa-globe mr-1 text-indigo-500"></i>Domain Web Kamu</h3><p class="text-xs text-gray-400 mb-3">Alamat buat akses situs & dashboard (/admin) kamu.</p>'+items+'</div>';
+  scheduleWebPoll();
 }
+function scheduleWebPoll(){ clearTimeout(window.__wp); window.__wp=setTimeout(function(){ if(document.getElementById('myWebDomain')) loadMyWebDomain(); }, 30000); }
 async function refreshMyDomain(hid){ var r=await api('/webdomain/refresh',{method:'POST',body:JSON.stringify({id:hid})}); toast('Status: '+(r.status||'?')); loadMyWebDomain(); }
 async function loadChart(days){ const el=$('#chartBody'); if(el)el.innerHTML='<div class="py-10 text-center text-gray-400 text-sm">Memuat…</div>'; const d=await api('/dashboard?days='+days); if($('#chartBody'))$('#chartBody').innerHTML=chartSVG(d.series); }
 

@@ -19,6 +19,17 @@ async function body<T = any>(req: Request): Promise<T> {
   try { return (await req.json()) as T; } catch { return {} as T; }
 }
 
+// Segarkan status tiap hostname dari Cloudflare (realtime: aktif↔pending sesuai DNS).
+async function withStatuses(env: Env, db: DB, list: any[]): Promise<any[]> {
+  for (const h of list) {
+    if (h.cf_hostname_id) {
+      const st = await getHostnameStatus(env, h.cf_hostname_id);
+      if (st && st !== h.status) { await db.setHostnameStatus(h.id, st); h.status = st; }
+    }
+  }
+  return list;
+}
+
 export async function handleAdmin(req: Request, url: URL, env: Env, db: DB, tenant: Tenant): Promise<Response | null> {
   const path = url.pathname;
   if (path !== "/admin" && !path.startsWith("/admin/")) return null;
@@ -158,7 +169,7 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
   // Web domain buyer — READ-ONLY (kelola tetap di owner). Buyer cuma lihat + cek status.
   if (path === "/webdomain" && req.method === "GET") {
     return json({
-      hostnames: await db.listHostnames(buyerId),
+      hostnames: await withStatuses(env, db, await db.listHostnames(buyerId)),
       saasTarget: env.SAAS_ZONE ? "saas." + env.SAAS_ZONE : "",
       saasZone: env.SAAS_ZONE || "",
     });
@@ -215,7 +226,7 @@ async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
       settings: { imap_host: st.imap_host, has_imap: !!st.imap_pass_enc, theme: st.theme, lang: st.lang },
       stats: await db.getStats(id),
       domains: await db.listDomains(id),
-      hostnames: await db.listHostnames(id),
+      hostnames: await withStatuses(env, db, await db.listHostnames(id)),
       saasTarget: env.SAAS_ZONE ? "saas." + env.SAAS_ZONE : "",
       saasZone: env.SAAS_ZONE || "",
     });
