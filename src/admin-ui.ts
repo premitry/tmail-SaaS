@@ -106,6 +106,7 @@ async function api(path, opts){
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(m){ const d=document.createElement('div'); d.textContent=m; d.className='fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50'; document.body.appendChild(d); setTimeout(()=>d.remove(),2000); }
 function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60)return s+'d'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'j'; return Math.floor(s/86400)+'h'; }
+function fmtTime(ms){ var d=new Date(ms), n=new Date(); function p(x){return ('0'+x).slice(-2);} var t=p(d.getHours())+':'+p(d.getMinutes()); return d.toDateString()===n.toDateString()?t:(p(d.getDate())+'/'+p(d.getMonth()+1)+' '+t); }
 
 /* ---- sidebar: collapse (desktop) / drawer (HP) ---- */
 function toggleSidebar(){
@@ -216,7 +217,7 @@ async function loadInbox(){
   const rows=d.messages||[];
   $('#inbList').innerHTML = rows.length ? rows.map(m=>
     '<div class="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40 '+(m.seen?'':'bg-indigo-50/40 dark:bg-gray-700/20')+'" onclick="openMsg(\''+m.id+'\')">'+
-      '<div class="flex justify-between gap-3"><div class="font-medium truncate '+(m.seen?'':'font-semibold')+'">'+esc(m.from_addr)+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+timeAgo(m.received_at)+'</div></div>'+
+      '<div class="flex justify-between gap-3"><div class="font-medium truncate '+(m.seen?'':'font-semibold')+'">'+esc(m.from_addr)+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+fmtTime(m.received_at)+'</div></div>'+
       '<div class="text-sm truncate">'+esc(m.subject||'(tanpa subjek)')+'</div>'+
       '<div class="text-xs text-gray-400 truncate">ke: '+esc(m.to_addr)+' · '+esc(m.preview||'')+'</div></div>'
   ).join('') : '<div class="p-8 text-center text-gray-400">Belum ada email</div>';

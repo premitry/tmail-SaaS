@@ -194,6 +194,7 @@ async function createAddr(local){
   showActive(); loadInbox(); connectWS();
 }
 function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60)return s+'d lalu'; if(s<3600)return Math.floor(s/60)+'m lalu'; if(s<86400)return Math.floor(s/3600)+'j lalu'; return Math.floor(s/86400)+'h lalu'; }
+function fmtTime(ms){ var d=new Date(ms), n=new Date(); function p(x){return ('0'+x).slice(-2);} var t=p(d.getHours())+':'+p(d.getMinutes()); return d.toDateString()===n.toDateString()?t:(p(d.getDate())+'/'+p(d.getMonth()+1)+' '+t); }
 async function loadInbox(){
   if(!addr) return; status('memuat…');
   const res = await api('/inbox?a=' + encodeURIComponent(addr));
@@ -203,7 +204,7 @@ async function loadInbox(){
   if(TWO){
     list.innerHTML = msgs.map(function(m){ var nm=escapeHtml((String(m.sender||'').split('@')[0])||m.sender||''), em=escapeHtml(m.sender||'');
       return '<div onclick="openMsg(\\''+m.id+'\\')" class="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 '+(m.read?'':'font-semibold')+'">'+
-        '<div class="flex justify-between gap-2"><div class="text-sm text-gray-900 dark:text-gray-100 truncate">'+nm+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+timeAgo(m.received_at)+'</div></div>'+
+        '<div class="flex justify-between gap-2"><div class="text-sm text-gray-900 dark:text-gray-100 truncate">'+nm+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+fmtTime(m.received_at)+'</div></div>'+
         '<div class="text-xs text-gray-500 truncate">'+em+'</div>'+
         '<div class="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">'+escapeHtml(m.subject)+'</div></div>';
     }).join('');
@@ -215,7 +216,7 @@ async function loadInbox(){
     return '<div onclick="openMsg(\\''+m.id+'\\')" class="flex items-center gap-3 py-4 px-5 border-b border-dashed border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer '+(m.read?'':'font-semibold')+'">'+
       '<div class="w-1/2 md:w-3/12 min-w-0"><div class="truncate text-sm text-gray-900 dark:text-gray-100">'+nm+'</div><div class="text-xs text-gray-500 truncate">'+em+'</div></div>'+
       '<div class="w-1/2 md:w-7/12 truncate text-sm text-gray-700 dark:text-gray-300">'+escapeHtml(m.subject)+'</div>'+
-      '<div class="hidden md:flex md:w-2/12 justify-end text-xs text-gray-500">'+timeAgo(m.received_at)+'</div></div>';
+      '<div class="hidden md:flex md:w-2/12 justify-end text-xs text-gray-500">'+fmtTime(m.received_at)+'</div></div>';
   }).join('');
 }
 async function openMsg(id){
@@ -227,7 +228,7 @@ async function openMsg(id){
   var backBtn = TWO ? '<span></span>' : '<button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali ke Inbox</button>';
   mv.innerHTML = '<div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">'+backBtn+
       '<button onclick="delMsg(\\''+id+'\\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md">Delete</button></div>'+
-    '<div class="p-4 border-b border-dashed border-gray-200 dark:border-gray-700"><div class="text-base text-gray-900 dark:text-gray-100">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400">'+escapeHtml(res.sender)+'</div></div>'+
+    '<div class="p-4 border-b border-dashed border-gray-200 dark:border-gray-700"><div class="text-base text-gray-900 dark:text-gray-100">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400">'+escapeHtml(res.sender)+' · '+fmtTime(res.received_at)+'</div></div>'+
     '<iframe class="flex-1 w-full bg-white min-h-[360px]" sandbox="allow-same-origin" srcdoc="'+escapeAttr(body)+'"></iframe>';
   if(!TWO){ $('#inboxList').style.display='none'; }
   mv.style.display='flex';
