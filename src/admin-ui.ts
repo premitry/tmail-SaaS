@@ -190,9 +190,8 @@ async function loadMyWebDomain(){
     var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
     var active=h.status==='active';
     var badge=active?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700';
-    var apex=h.hostname.split('.').length<=2;
-    var dns=active?'<div class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle"></i> Domain aktif & siap dipakai</div>':(isSub?'<div class="text-xs text-gray-500 mt-1">Sedang diaktifkan…</div>':'<div class="text-xs text-gray-700 dark:text-gray-200 mt-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3"><div class="font-semibold mb-1">Set DNS ini di penyedia domainmu biar aktif:</div><div class="font-mono">'+(apex?('Tipe: <b>A / ALIAS</b><br>Nama: <b>@</b> (root)<br>Target: <b>'+esc(d.saasTarget)+'</b><br><span class="text-gray-400 font-sans">Domain utama butuh ALIAS / CNAME-flattening</span>'):('Tipe: <b>CNAME</b><br>Nama: <b>'+esc(h.hostname.split('.')[0])+'</b><br>Target: <b>'+esc(d.saasTarget)+'</b>'))+'</div><button onclick="refreshMyDomain(\''+h.id+'\')" class="mt-2 text-xs text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button></div>');
-    return '<div class="mb-2 last:mb-0"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dns+'</div>';
+    var btn=(active||isSub)?'':'<div class="mt-1"><button onclick="refreshMyDomain(\''+h.id+'\')" class="text-xs text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button></div>';
+    return '<div class="mb-2 last:mb-0"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dnsHint(h,d)+btn+'</div>';
   }).join('');
   box.innerHTML='<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6"><h3 class="font-semibold mb-1"><i class="fas fa-globe mr-1 text-indigo-500"></i>Domain Web Kamu</h3><p class="text-xs text-gray-400 mb-3">Alamat buat akses situs & dashboard (/admin) kamu.</p>'+items+'</div>';
   scheduleWebPoll();
@@ -401,14 +400,20 @@ async function submitCreateBuyer(){
   if(r.error){alert(r.error);return;}
   closeModal(); loadUsers(); toast('Buyer dibuat');
 }
+function dnsHint(h,d){
+  var active=h.status==='active';
+  var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
+  if(active) return '<div class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle"></i> Domain aktif & siap dipakai</div>';
+  if(isSub) return '<div class="text-xs text-gray-500 mt-1">Sedang diaktifkan…</div>';
+  var apex=h.hostname.split('.').length<=2;
+  return '<div class="text-xs text-gray-700 dark:text-gray-200 mt-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3"><div class="font-semibold mb-1">Set DNS ini di penyedia domain biar aktif:</div><div class="font-mono leading-relaxed">'+(apex?('Tipe: <b>CNAME</b> (flattening) / A-ALIAS<br>Nama: <b>@</b> (root)<br>Target: <b>'+esc(d.saasTarget)+'</b>'):('Tipe: <b>CNAME</b><br>Nama: <b>'+esc(h.hostname.split('.')[0])+'</b><br>Target: <b>'+esc(d.saasTarget)+'</b>'))+'</div><div class="text-amber-600 mt-2 font-sans"><i class="fas fa-triangle-exclamation"></i> Kalau domain di <b>Cloudflare</b>: set record <b>DNS only</b> (awan abu-abu), JANGAN Proxied — biar tak kena Error 1014.</div></div>';
+}
 function webSectionHtml(d,id){
   var webHtml=(d.hostnames||[]).map(function(h){
     var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
     var active=h.status==='active';
     var badge=active?'bg-green-100 text-green-700':(h.status==='manual'?'bg-gray-200 text-gray-600':'bg-amber-100 text-amber-700');
-    var apex=h.hostname.split('.').length<=2;
-    var dns=isSub?'<div class="text-[11px] text-green-600 mt-1">Subdomain '+esc(d.saasZone)+' — langsung aktif, tak perlu setting DNS</div>':(active?'':'<div class="text-[11px] text-gray-500 mt-1 bg-white dark:bg-gray-800 rounded p-2">Buyer set DNS: '+(apex?('A/ALIAS <b>'+esc(h.hostname)+'</b> → <b>'+esc(d.saasTarget)+'</b> (domain utama: pakai ALIAS / CNAME-flattening)'):('CNAME <b>'+esc(h.hostname)+'</b> → <b>'+esc(d.saasTarget)+'</b>'))+'</div>');
-    return '<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mb-1"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 text-sm truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dns+'<div class="flex gap-3 mt-1 text-xs">'+(isSub?'':'<button onclick="refreshHost(\''+id+'\',\''+h.id+'\')" class="text-blue-600">Cek status</button>')+'<button onclick="delHost(\''+id+'\',\''+h.id+'\')" class="text-red-600">Hapus</button></div></div>';
+    return '<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 text-sm font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dnsHint(h,d)+'<div class="flex gap-3 mt-2 text-xs">'+(isSub?'':'<button onclick="refreshHost(\''+id+'\',\''+h.id+'\')" class="text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button>')+'<button onclick="delHost(\''+id+'\',\''+h.id+'\')" class="text-red-600">Hapus</button></div></div>';
   }).join('')||'<div class="text-xs text-gray-400 mb-1">Belum ada web domain</div>';
   return '<div class="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3 mb-2"><h4 class="font-semibold text-sm mb-1"><i class="fas fa-globe mr-1"></i>Web Domain (alamat akses situs & /admin buyer)</h4><p class="text-xs text-gray-400 mb-2">Subdomain '+esc(d.saasZone||'')+' langsung aktif; domain sendiri buyer butuh CNAME.</p>'+webHtml+'<div class="flex gap-2 mt-2"><input id="newHost" placeholder="mail.buyera.com / buyera.com / nama.'+esc(d.saasZone||'')+'" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-2 px-3 text-sm"/><button onclick="addHost(\''+id+'\')" class="bg-indigo-600 text-white px-3 rounded-lg text-sm">Tambah</button></div></div>';
 }
