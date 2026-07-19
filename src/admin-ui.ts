@@ -128,7 +128,7 @@ function closeModal(){ $('#modalRoot').innerHTML=''; }
 
 const NAV = {
   owner: [ ['#users','Users','fa-users'] ],
-  buyer: [ ['#dashboard','Dashboard','fa-gauge-high'], ['#inbox','Inbox','fa-inbox'], ['#domains','Domains','fa-globe'], ['#settings','Settings','fa-gear'] ],
+  buyer: [ ['#dashboard','Dashboard','fa-gauge-high'], ['#domains','Domains','fa-globe'], ['#settings','Settings','fa-gear'], ['#inbox','Inbox','fa-inbox'] ],
 };
 function renderNav(){
   const items = NAV[ME.role] || [];
@@ -146,24 +146,33 @@ function expiryBanner(){
 }
 
 /* ============ grafik garis ============ */
-function chartSVG(series,H){
+function fillDays(series,days){ var map={}; (series||[]).forEach(function(s){ map[s.day]=s; }); var out=[],now=new Date(); for(var i=days-1;i>=0;i--){ var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i); var key=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); out.push(map[key]||{day:key,emails_created:0,messages_received:0}); } return out; }
+function chartTip(e,day,em,ms){ var t=document.getElementById('chartTip'); if(!t)return; t.innerHTML='<div class="font-semibold mb-1">'+day+'</div><div><span style="color:#818cf8">■</span> Email dibuat: '+em+'</div><div><span style="color:#34d399">■</span> Pesan diterima: '+ms+'</div>'; t.style.display='block'; chartTipMove(e); }
+function chartTipMove(e){ var t=document.getElementById('chartTip'); if(!t||t.style.display!=='block')return; var p=t.parentElement.getBoundingClientRect(); var x=e.clientX-p.left+14, y=e.clientY-p.top+14; if(x+160>p.width)x=p.width-160; if(x<0)x=4; t.style.left=x+'px'; t.style.top=y+'px'; }
+function chartTipHide(){ var t=document.getElementById('chartTip'); if(t)t.style.display='none'; }
+function chartSVG(series,H,days){
+  if(days) series=fillDays(series,days);
   if(!series||!series.length) return '<div class="text-gray-400 text-sm py-10 text-center">Belum ada data grafik</div>';
-  const w=620,h=H||210,pad=32,n=series.length; let max=1;
-  series.forEach(s=>{ max=Math.max(max,s.emails_created,s.messages_received); });
-  const X=i=> n===1 ? pad+(w-pad*2)/2 : pad+(w-pad*2)*i/(n-1);
-  const Y=v=> h-pad-(v/max)*(h-pad*2);
-  let g='';
-  for(let k=0;k<=2;k++){ const gy=pad+(h-pad*2)*k/2; const val=Math.round(max*(2-k)/2);
-    g+='<line x1="'+pad+'" y1="'+gy+'" x2="'+(w-pad)+'" y2="'+gy+'" stroke="#e5e7eb" stroke-width="1"/>';
-    g+='<text x="'+(pad-6)+'" y="'+(gy+3)+'" font-size="9" fill="#9ca3af" text-anchor="end">'+val+'</text>'; }
+  var w=640,h=H||230,pad=36,padB=28,n=series.length,max=1;
+  series.forEach(function(s){ max=Math.max(max,s.emails_created,s.messages_received); });
+  var step0=Math.max(1,Math.ceil(max/4)); max=step0*4;
+  var X=function(i){ return n===1?pad+(w-pad*2)/2:pad+(w-pad*2)*i/(n-1); };
+  var top=14; var Y=function(v){ return (h-padB)-(v/max)*((h-padB)-top); };
+  var g='';
+  for(var k=0;k<=4;k++){ var val=step0*k, gy=Y(val); g+='<line x1="'+pad+'" y1="'+gy+'" x2="'+(w-pad)+'" y2="'+gy+'" stroke="#374151" stroke-width="1" opacity="0.45"/><text x="'+(pad-7)+'" y="'+(gy+3)+'" font-size="9" fill="#9ca3af" text-anchor="end">'+val+'</text>'; }
   function lineOf(key,color){
-    const pts=series.map((s,i)=>X(i)+','+Y(s[key])).join(' ');
-    const dots=series.map((s,i)=>'<circle cx="'+X(i)+'" cy="'+Y(s[key])+'" r="2.5" fill="'+color+'"><title>'+s[key]+'</title></circle>').join('');
+    var pts=series.map(function(s,i){ return X(i)+','+Y(s[key]); }).join(' ');
+    var dots=series.map(function(s,i){ return '<circle cx="'+X(i)+'" cy="'+Y(s[key])+'" r="2.6" fill="'+color+'"/>'; }).join('');
     return '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
   }
-  const step=n>8?Math.ceil(n/8):1;
-  const xl=series.map((s,i)=> (i%step===0||i===n-1) ? '<text x="'+X(i)+'" y="'+(h-pad+15)+'" font-size="9" fill="#9ca3af" text-anchor="middle">'+String(s.day).slice(5)+'</text>' : '').join('');
-  return '<svg viewBox="0 0 '+w+' '+h+'" class="w-full">'+g+lineOf('emails_created','#4f46e5')+lineOf('messages_received','#22c55e')+xl+'</svg>'+
+  var stepL=n>10?Math.ceil(n/10):1;
+  var xl=series.map(function(s,i){ return (i%stepL===0||i===n-1)?'<text x="'+X(i)+'" y="'+(h-padB+16)+'" font-size="9" fill="#9ca3af" text-anchor="middle">'+String(s.day).slice(5)+'</text>':''; }).join('');
+  var colW=n>1?(w-pad*2)/(n-1):(w-pad*2);
+  var hov=series.map(function(s,i){ var cx=X(i); return '<rect x="'+(cx-colW/2)+'" y="'+top+'" width="'+colW+'" height="'+((h-padB)-top)+'" fill="transparent" onmouseover="chartTip(event,\''+s.day+'\','+s.emails_created+','+s.messages_received+')" onmousemove="chartTipMove(event)" onmouseout="chartTipHide()"/>'; }).join('');
+  return '<div class="relative">'+
+    '<svg viewBox="0 0 '+w+' '+h+'" class="w-full">'+g+lineOf('emails_created','#6366f1')+lineOf('messages_received','#10b981')+xl+hov+'</svg>'+
+    '<div id="chartTip" class="absolute pointer-events-none bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl border border-gray-700 z-20" style="display:none;left:0;top:0;min-width:120px"></div>'+
+  '</div>'+
     '<div class="flex gap-4 justify-center text-xs text-gray-500 mt-2"><span><i class="fas fa-minus text-indigo-500"></i> Email dibuat</span><span><i class="fas fa-minus text-green-500"></i> Pesan diterima</span></div>';
 }
 
@@ -180,7 +189,7 @@ async function vDashboard(){
   const d=await api('/dashboard');
   const cards=[['Email dibuat',d.emails,'fa-at','text-indigo-600'],['Pesan diterima',d.messages,'fa-inbox','text-green-600'],['Domain',d.domains,'fa-globe','text-purple-600'],['Hari ini',(d.series&&d.series.length?d.series[d.series.length-1].messages_received:0),'fa-bolt','text-amber-600']];
   $('#cards').innerHTML=cards.map(c=>'<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5"><div class="'+c[3]+' text-xl mb-2"><i class="fas '+c[2]+'"></i></div><div class="text-3xl font-bold">'+(c[1]||0)+'</div><div class="text-sm text-gray-500 mt-1">'+c[0]+'</div></div>').join('');
-  $('#chartBody').innerHTML=chartSVG(d.series);
+  $('#chartBody').innerHTML=chartSVG(d.series,null,14);
   loadMyWebDomain();
 }
 async function loadMyWebDomain(){
@@ -199,7 +208,7 @@ async function loadMyWebDomain(){
 }
 function scheduleWebPoll(){ clearTimeout(window.__wp); window.__wp=setTimeout(function(){ if(document.getElementById('myWebDomain')) loadMyWebDomain(); }, 30000); }
 async function refreshMyDomain(hid){ var r=await api('/webdomain/refresh',{method:'POST',body:JSON.stringify({id:hid})}); toast('Status: '+(r.status||'?')); loadMyWebDomain(); }
-async function loadChart(days){ const el=$('#chartBody'); if(el)el.innerHTML='<div class="py-10 text-center text-gray-400 text-sm">Memuat…</div>'; const d=await api('/dashboard?days='+days); if($('#chartBody'))$('#chartBody').innerHTML=chartSVG(d.series); }
+async function loadChart(days){ const el=$('#chartBody'); if(el)el.innerHTML='<div class="py-10 text-center text-gray-400 text-sm">Memuat…</div>'; const d=await api('/dashboard?days='+days); if($('#chartBody'))$('#chartBody').innerHTML=chartSVG(d.series,null,+days); }
 
 /* ============ INBOX (gabungan + search + popup) ============ */
 let inbState={page:1,q:''};
@@ -451,7 +460,7 @@ async function showDetail(id){
       '<div><b>Tema:</b> '+esc(d.settings.theme)+' · <b>Bahasa:</b> '+esc(d.settings.lang)+'</div>'+
       '<div class="md:col-span-2"><b>Domain email:</b> '+(d.domains.map(x=>esc(x.domain)).join(', ')||'—')+'</div></div>'+
     webSectionHtml(d,id)+
-    '<div class="max-w-md mx-auto">'+chartSVG(d.stats.series,140)+'</div>',
+    '<div class="max-w-md mx-auto">'+chartSVG(d.stats.series,140,14)+'</div>',
     true);
 }
 async function addHost(id){ var v=$('#newHost').value.trim(); if(!v)return; var r=await api('/buyers/hostname',{method:'POST',body:JSON.stringify({id:id,hostname:v})}); if(r.error){alert(r.error);return;} toast(r.warn?('Ditambah (catatan: '+r.warn+')'):'Web domain ditambah'); if(window.__wRefresh)window.__wRefresh(); }

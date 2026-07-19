@@ -24,6 +24,7 @@ export interface UserRow {
   id: string;
   role: "owner" | "buyer";
   email: string;
+  username: string | null;
   pass_hash: string;
   name: string;
   status: "active" | "suspended" | "expired";
