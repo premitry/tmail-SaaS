@@ -168,7 +168,7 @@ function chartSVG(series,H){
 
 /* ============ DASHBOARD ============ */
 async function vDashboard(){
-  view.innerHTML='<h1 class="text-2xl font-bold mb-6">Dashboard</h1><div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>'+
+  view.innerHTML='<h1 class="text-2xl font-bold mb-6">Dashboard</h1><div id="myWebDomain"></div><div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>'+
     '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5">'+
       '<div class="flex items-center justify-between mb-1"><h3 class="font-semibold">Aktivitas</h3>'+
         '<select id="daySel" onchange="loadChart(this.value)" class="text-sm rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">'+
@@ -180,7 +180,23 @@ async function vDashboard(){
   const cards=[['Email dibuat',d.emails,'fa-at','text-indigo-600'],['Pesan diterima',d.messages,'fa-inbox','text-green-600'],['Domain',d.domains,'fa-globe','text-purple-600'],['Hari ini',(d.series&&d.series.length?d.series[d.series.length-1].messages_received:0),'fa-bolt','text-amber-600']];
   $('#cards').innerHTML=cards.map(c=>'<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5"><div class="'+c[3]+' text-xl mb-2"><i class="fas '+c[2]+'"></i></div><div class="text-3xl font-bold">'+(c[1]||0)+'</div><div class="text-sm text-gray-500 mt-1">'+c[0]+'</div></div>').join('');
   $('#chartBody').innerHTML=chartSVG(d.series);
+  loadMyWebDomain();
 }
+async function loadMyWebDomain(){
+  var box=$('#myWebDomain'); if(!box) return;
+  var d=await api('/webdomain'); var hs=d.hostnames||[];
+  if(!hs.length){ box.innerHTML=''; return; }
+  var items=hs.map(function(h){
+    var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
+    var active=h.status==='active';
+    var badge=active?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700';
+    var apex=h.hostname.split('.').length<=2;
+    var dns=active?'<div class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle"></i> Domain aktif & siap dipakai</div>':(isSub?'<div class="text-xs text-gray-500 mt-1">Sedang diaktifkan…</div>':'<div class="text-xs text-gray-700 dark:text-gray-200 mt-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3"><div class="font-semibold mb-1">Set DNS ini di penyedia domainmu biar aktif:</div><div class="font-mono">'+(apex?('Tipe: <b>A / ALIAS</b><br>Nama: <b>@</b> (root)<br>Target: <b>'+esc(d.saasTarget)+'</b><br><span class="text-gray-400 font-sans">Domain utama butuh ALIAS / CNAME-flattening</span>'):('Tipe: <b>CNAME</b><br>Nama: <b>'+esc(h.hostname.split('.')[0])+'</b><br>Target: <b>'+esc(d.saasTarget)+'</b>'))+'</div><button onclick="refreshMyDomain(\''+h.id+'\')" class="mt-2 text-xs text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button></div>');
+    return '<div class="mb-2 last:mb-0"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dns+'</div>';
+  }).join('');
+  box.innerHTML='<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6"><h3 class="font-semibold mb-1"><i class="fas fa-globe mr-1 text-indigo-500"></i>Domain Web Kamu</h3><p class="text-xs text-gray-400 mb-3">Alamat buat akses situs & dashboard (/admin) kamu.</p>'+items+'</div>';
+}
+async function refreshMyDomain(hid){ var r=await api('/webdomain/refresh',{method:'POST',body:JSON.stringify({id:hid})}); toast('Status: '+(r.status||'?')); loadMyWebDomain(); }
 async function loadChart(days){ const el=$('#chartBody'); if(el)el.innerHTML='<div class="py-10 text-center text-gray-400 text-sm">Memuat…</div>'; const d=await api('/dashboard?days='+days); if($('#chartBody'))$('#chartBody').innerHTML=chartSVG(d.series); }
 
 /* ============ INBOX (gabungan + search + popup) ============ */

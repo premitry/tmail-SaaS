@@ -155,6 +155,26 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
     return json({ ok: true });
   }
 
+  // Web domain buyer — READ-ONLY (kelola tetap di owner). Buyer cuma lihat + cek status.
+  if (path === "/webdomain" && req.method === "GET") {
+    return json({
+      hostnames: await db.listHostnames(buyerId),
+      saasTarget: env.SAAS_ZONE ? "saas." + env.SAAS_ZONE : "",
+      saasZone: env.SAAS_ZONE || "",
+    });
+  }
+  if (path === "/webdomain/refresh" && req.method === "POST") {
+    const b = await body(req);
+    const h = await db.getHostname(b.id);
+    if (!h || h.buyer_id !== buyerId) return json({ error: "tidak ditemukan" }, 404);
+    if (h.cf_hostname_id) {
+      const st = await getHostnameStatus(env, h.cf_hostname_id);
+      if (st) await db.setHostnameStatus(h.id, st);
+      return json({ ok: true, status: st || h.status });
+    }
+    return json({ ok: true, status: h.status });
+  }
+
   if (path === "/export") {
     const domains = await db.listDomains(buyerId);
     const st = await db.ensureBuyerSettings(buyerId);
