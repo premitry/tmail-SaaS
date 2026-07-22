@@ -1,7 +1,7 @@
 // Handler web publik temp-mail + visitor API + WebSocket. Tenant = buyer (by host).
 import type { Env, Tenant } from "./types";
 import { DB } from "./db";
-import { renderPublicPage, renderLockScreen } from "./public-ui";
+import { renderPublicPage, renderLockScreen, renderContentPage } from "./public-ui";
 import { renderDocs } from "./docs";
 import { parseCookies } from "./auth";
 import { inboxStub, genLocalPart } from "./store";
@@ -98,8 +98,12 @@ export async function handlePublic(
       socials: safeJson(st.socials_json, []),
       darkMode: st.dark_mode !== 0, lang: st.lang,
       heroHeading: st.hero_heading, heroSubtitle: st.hero_subtitle,
+      hasFaq: !!st.page_faq, hasPrivacy: !!st.page_privacy, hasContact: !!st.page_contact,
     }));
   }
+  if (path === "/faq") return html(renderContentPage(st.brand_name, st.logo_url, st.favicon_url, { primary: st.color_primary }, "FAQ", st.page_faq));
+  if (path === "/privacy") return html(renderContentPage(st.brand_name, st.logo_url, st.favicon_url, { primary: st.color_primary }, "Kebijakan Privasi", st.page_privacy));
+  if (path === "/contact") return html(renderContentPage(st.brand_name, st.logo_url, st.favicon_url, { primary: st.color_primary }, "Kontak", st.page_contact));
 
   // WebSocket realtime
   if (path === "/api/ws") {

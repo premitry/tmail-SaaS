@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS buyer_settings (
   theme         TEXT NOT NULL DEFAULT 'nebula', -- default | mantis | nebula | blueprint
   hero_heading  TEXT NOT NULL DEFAULT '',
   hero_subtitle TEXT NOT NULL DEFAULT '',
+  page_faq      TEXT NOT NULL DEFAULT '',
+  page_privacy  TEXT NOT NULL DEFAULT '',
+  page_contact  TEXT NOT NULL DEFAULT '',
   lang          TEXT NOT NULL DEFAULT 'id',      -- id | en
   dark_mode     INTEGER NOT NULL DEFAULT 1,
   email_limit   INTEGER NOT NULL DEFAULT 5,

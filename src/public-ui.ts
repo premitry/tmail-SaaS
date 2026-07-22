@@ -12,6 +12,25 @@ export interface PublicOpts {
   socials: Array<{ icon: string; link: string }>;
   darkMode: boolean; lang: string;
   heroHeading?: string; heroSubtitle?: string;
+  hasFaq?: boolean; hasPrivacy?: boolean; hasContact?: boolean;
+}
+
+// Halaman konten sederhana (FAQ / Privacy / Contact) — dipakai semua tema.
+export function renderContentPage(brand: string, logoUrl: string, faviconUrl: string, colors: { primary: string }, title: string, content: string): string {
+  const logo = logoUrl || DEFAULT_LOGO;
+  const favicon = faviconUrl || DEFAULT_LOGO;
+  return `${head(brand + " — " + title, "", favicon, false)}
+<body class="bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col">
+  <header class="text-white px-6 py-4 flex items-center justify-between" style="background-color:${colors.primary}">
+    <a href="/"><img src="${esc(logo)}" class="max-h-8 object-contain" /></a>
+    <a href="/" class="text-sm hover:underline"><i class="fas fa-arrow-left mr-1"></i>Kembali</a>
+  </header>
+  <main class="max-w-3xl mx-auto w-full px-5 py-10 flex-1">
+    <h1 class="text-2xl font-bold mb-4" style="color:${colors.primary}">${esc(title)}</h1>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 whitespace-pre-wrap leading-relaxed">${esc(content) || "<span class='text-gray-400'>Belum ada konten.</span>"}</div>
+  </main>
+  <footer class="text-center text-gray-400 text-sm py-6">&copy; ${new Date().getFullYear()} ${esc(brand)}</footer>
+</body></html>`;
 }
 
 const BP_STYLE = `<style>
@@ -180,7 +199,7 @@ export function renderPublicPage(o: PublicOpts): string {
   <div class="max-w-4xl mx-auto flex flex-col gap-5">
     <div class="bp-card px-6 py-4 flex flex-col gap-3">
       <div class="flex items-center justify-between gap-3">${brandHtml}<div class="flex items-center gap-3 text-sm" style="color:${c.primary}">${statusEl}${socials}</div></div>
-      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a></nav>
+      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a>${o.hasFaq ? '<a href="/faq">FAQ</a>' : ""}${o.hasPrivacy ? '<a href="/privacy">PRIVACY</a>' : ""}${o.hasContact ? '<a href="/contact">CONTACT</a>' : ""}</nav>
     </div>
     <div class="bp-card px-6 py-8">
       <h1 class="text-3xl md:text-4xl font-bold text-center mb-3" style="color:${c.primary}">${esc(heading)}</h1>
@@ -203,12 +222,12 @@ export function renderPublicPage(o: PublicOpts): string {
         </div>
       </div>
     </div>
-    <div id="inboxWrap" class="grid md:grid-cols-2 gap-5" style="display:none">
-      <div class="bp-card p-0 overflow-hidden">
+    <div id="inboxWrap" class="grid md:grid-cols-5 gap-5" style="display:none">
+      <div class="bp-card p-0 overflow-hidden md:col-span-2">
         <div class="bp-head" style="background:${c.primary}">INBOX (<span id="inboxCount">0</span>)</div>
-        <div id="inboxList" class="min-h-[460px] max-h-[600px] overflow-y-auto"></div>
+        <div id="inboxList" class="min-h-[460px] max-h-[560px] overflow-y-auto"></div>
       </div>
-      <div class="bp-card p-0 overflow-hidden flex flex-col">
+      <div class="bp-card p-0 overflow-hidden flex flex-col md:col-span-3">
         <div class="bp-head" style="background:${c.primary}">PESAN</div>
         <div id="msgView" class="min-h-[460px] flex flex-col"><div class="flex-1 flex items-center justify-center text-sm py-16" style="color:${c.primary};opacity:.5">Pilih email untuk dibaca</div></div>
       </div>

@@ -138,7 +138,7 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
   if (path === "/settings" && req.method === "POST") {
     const b = await body(req);
     const patch: any = {};
-    const str = ["brand_name", "logo_url", "favicon_url", "color_primary", "color_secondary", "color_tertiary", "theme", "lang", "imap_host", "imap_user", "socials_json", "lock_json", "hero_heading", "hero_subtitle"];
+    const str = ["brand_name", "logo_url", "favicon_url", "color_primary", "color_secondary", "color_tertiary", "theme", "lang", "imap_host", "imap_user", "socials_json", "lock_json", "hero_heading", "hero_subtitle", "page_faq", "page_privacy", "page_contact"];
     for (const k of str) if (b[k] !== undefined) patch[k] = String(b[k]);
     for (const k of ["dark_mode", "imap_tls", "imap_port", "email_limit", "delete_after_minutes"]) if (b[k] !== undefined) patch[k] = Number(b[k]);
     if (b.imap_pass) patch.imap_pass_enc = await encryptSecret(env, String(b.imap_pass));

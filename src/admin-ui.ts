@@ -120,6 +120,7 @@ if(localStorage.getItem('sbc')==='1') document.body.classList.add('sbc');
 const INP = 'w-full max-w-md rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500';
 function inp(id,val,type,ph){ return '<input id="'+id+'" type="'+(type||'text')+'" '+(ph?'placeholder="'+esc(ph)+'" ':'')+'value="'+esc(val)+'" class="'+INP+'"/>'; }
 function field(label,desc,inner){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label>'+(desc?'<p class="text-xs text-gray-400 mb-1.5">'+desc+'</p>':'<div class="mb-1.5"></div>')+inner+'</div>'; }
+function ta(id,val){ return '<textarea id="'+id+'" rows="4" class="w-full max-w-xl rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3 text-sm">'+esc(val||'')+'</textarea>'; }
 function colorField(id,label,desc,val){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label><p class="text-xs text-gray-400 mb-1.5">'+desc+'</p><div class="flex items-center gap-2"><input id="'+id+'" type="color" value="'+esc(val)+'" oninput="var t=document.getElementById(\''+id+'_t\');if(t)t.value=this.value" class="w-12 h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-white dark:bg-gray-800"/><input id="'+id+'_t" type="text" value="'+esc(val)+'" maxlength="7" placeholder="#000000" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){document.getElementById(\''+id+'\').value=this.value;}" class="w-24 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></div></div>'; }
 function card(title,desc,inner){ return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-5"><h3 class="font-semibold">'+title+'</h3>'+(desc?'<p class="text-xs text-gray-400 mb-4">'+desc+'</p>':'<div class="mb-4"></div>')+inner+'</div>'; }
 function saveBtn(fn){ return '<button onclick="'+fn+'" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg mt-1">Simpan</button>'; }
@@ -316,6 +317,11 @@ async function vSettings(){
     field('Heading','Judul besar di tengah.',inp('h_head',s.hero_heading||''))+
     field('Subtitle','Kalimat di bawah judul.',inp('h_sub',s.hero_subtitle||''))+
     saveBtn('saveHero()'))+'</div>'+
+  card('Halaman (FAQ / Privasi / Kontak)','Isi konten halaman untuk menu nav (tema Blueprint). Kosong = link tidak muncul.',
+    field('FAQ','',ta('p_faq',s.page_faq))+
+    field('Kebijakan Privasi','',ta('p_priv',s.page_privacy))+
+    field('Kontak','',ta('p_contact',s.page_contact))+
+    saveBtn('savePages()'))+
   card('Advance','API key & kunci halaman.',
     '<h4 class="text-sm font-semibold mb-1">API Keys</h4><p class="text-xs text-gray-400 mb-2">Untuk otomasi eksternal. <a href="/docs'+QS+'" target="_blank" class="text-indigo-600">Docs</a></p><div id="keyList" class="space-y-2 mb-3 max-w-lg"></div>'+
     '<div class="flex gap-2 mb-6 max-w-md"><input id="keyLabel" placeholder="label (mis. bot-signup)" class="flex-1 '+INP+'"/><button onclick="addKey()" class="bg-indigo-600 text-white px-4 rounded-lg">Buat</button></div>'+
@@ -336,6 +342,7 @@ function readImg(inp,kind){ const f=inp.files[0]; if(!f)return; if(f.size>200000
 function clearImg(kind){ window.__img[kind]=''; const p=$('#'+kind+'Prev'); if(p)p.src=window.DEFAULT_LOGO; const n=$('#'+kind+'Note'); if(n){ n.className='text-xs text-gray-400'; n.innerHTML='bawaan TMail · <button type="button" onclick="clearImg(\''+kind+'\')" class="text-red-600 underline">pakai bawaan</button>'; } }
 function saveGeneral(){ put({brand_name:$('#g_brand').value,logo_url:window.__img.logo,favicon_url:window.__img.favicon,color_primary:$('#g_c1').value,color_secondary:$('#g_c2').value,color_tertiary:$('#g_c3').value,dark_mode:$('#g_dark').checked?1:0}); }
 function saveHero(){ put({hero_heading:$('#h_head').value,hero_subtitle:$('#h_sub').value}); }
+function savePages(){ put({page_faq:$('#p_faq').value,page_privacy:$('#p_priv').value,page_contact:$('#p_contact').value}); }
 function imapPayload(){ return {imap_host:$('#i_host').value,imap_port:+$('#i_port').value,imap_user:$('#i_user').value,imap_tls:$('#i_tls').checked?1:0,imap_pass:$('#i_pass').value}; }
 function imapResult(cls,html){ var r=$('#imapTestResult'); if(r){ r.className='text-sm mt-2 '+cls; r.innerHTML=html; } }
 async function testImap(){ imapResult('text-gray-500','<i class="fas fa-spinner fa-spin"></i> Menguji koneksi…'); const res=await api('/settings/imap-test',{method:'POST',body:JSON.stringify(imapPayload())}); if(res.ok){ imapResult('text-green-600','<i class="fas fa-check-circle"></i> Berhasil konek ke IMAP'); } else { imapResult('text-red-600','<i class="fas fa-times-circle"></i> Gagal: '+esc(res.error||'tidak diketahui')); } return res.ok; }

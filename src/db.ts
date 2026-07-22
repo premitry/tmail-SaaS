@@ -116,7 +116,7 @@ export class DB {
       "imap_host", "imap_port", "imap_user", "imap_pass_enc", "imap_tls", "imap_last_uid",
       "brand_name", "logo_url", "favicon_url", "color_primary", "color_secondary", "color_tertiary",
       "theme", "lang", "dark_mode", "email_limit", "delete_after_minutes", "socials_json", "lock_json",
-      "hero_heading", "hero_subtitle",
+      "hero_heading", "hero_subtitle", "page_faq", "page_privacy", "page_contact",
     ];
     const keys = Object.keys(patch).filter((k) => allowed.includes(k));
     if (!keys.length) return;
