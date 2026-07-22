@@ -258,6 +258,7 @@ document.querySelectorAll('.act').forEach(b => b.onclick = () => {
   if(a==='clear'){ deleteAddr(); }
 });
 if(addr){ showActive(); loadInbox(); connectWS(); }
+else if(CFG.domains && CFG.domains.length){ createAddr(''); }  // belum ada alamat -> auto-generate
 setInterval(()=>{ if(addr) loadInbox(); }, 15000);
 </script>
 </body></html>`;
