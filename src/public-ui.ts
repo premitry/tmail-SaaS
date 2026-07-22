@@ -27,7 +27,7 @@ export function renderContentPage(brand: string, logoUrl: string, faviconUrl: st
   </header>
   <main class="max-w-3xl mx-auto w-full px-5 py-10 flex-1">
     <h1 class="text-2xl font-bold mb-4" style="color:${colors.primary}">${esc(title)}</h1>
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 whitespace-pre-wrap leading-relaxed">${esc(content) || "<span class='text-gray-400'>Belum ada konten.</span>"}</div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 whitespace-pre-wrap leading-relaxed">${esc(content) || "<span class='text-gray-400'>Belum ada konten.</span>"}</div>
   </main>
   <footer class="text-center text-gray-400 text-sm py-6">&copy; ${new Date().getFullYear()} ${esc(brand)}</footer>
 </body></html>`;
@@ -93,7 +93,7 @@ export function renderPublicPage(o: PublicOpts): string {
   const statusEl = `<span id="statusDot" class="text-xs text-gray-400"><i class="fas fa-circle text-[8px]"></i> <span id="statusText">idle</span></span>`;
 
   const inboxArea = layout === "sidebar" ? `
-    <div id="inboxList" class="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 min-h-[200px] lg:min-h-[440px] overflow-y-auto"></div>
+    <div id="inboxList" class="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 min-h-[200px] lg:min-h-[440px] overflow-y-auto"></div>
     <div id="msgView" class="msg-pane w-full lg:w-2/3 min-h-[440px] flex flex-col"><div class="flex-1 flex items-center justify-center text-gray-300 dark:text-gray-600"><div class="text-center"><div class="text-5xl mb-3"><i class="far fa-envelope-open"></i></div><div>Pilih email untuk dibaca</div></div></div></div>` : `
     <div id="inboxList" class="w-full min-h-[320px] divide-y divide-gray-100 dark:divide-gray-800"></div>
     <div id="msgView" class="w-full min-h-[320px] flex-col" style="display:none"></div>`;
@@ -121,7 +121,7 @@ export function renderPublicPage(o: PublicOpts): string {
     <div class="mt-auto pt-8 flex justify-center">${socials}</div>
   </aside>
   <div class="flex-1 flex flex-col min-w-0">
-    <nav class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-5 h-16 flex items-center justify-end gap-4">${statusEl}${darkBtn}</nav>
+    <nav class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-5 h-16 flex items-center justify-end gap-4">${statusEl}${darkBtn}</nav>
     <main class="flex-1 lg:flex bg-white dark:bg-gray-900" id="inboxWrap" style="display:none">${inboxArea}</main>
     ${footer}
   </div>
@@ -158,7 +158,7 @@ export function renderPublicPage(o: PublicOpts): string {
     </div>
   </div>
   <main class="container mx-auto flex-1 p-5 w-full flex flex-col">
-    <div class="flex-1 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm" id="inboxWrap" style="display:none">${inboxArea}</div>
+    <div class="flex-1 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm" id="inboxWrap" style="display:none">${inboxArea}</div>
   </main>
   ${footer}
 </div>`;
@@ -300,7 +300,7 @@ async function loadInbox(){
   var header = '<div class="flex items-center gap-3 py-3 px-5 bg-gray-100 dark:bg-gray-800 text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400"><div class="w-1/2 md:w-3/12">Pengirim</div><div class="w-1/2 md:w-7/12">Subjek</div><div class="hidden md:flex md:w-2/12 justify-end">Waktu</div></div>';
   list.innerHTML = header + msgs.map(function(m){
     var em = escapeHtml(m.sender||''), nm = escapeHtml((String(m.sender||'').split('@')[0])||m.sender||'');
-    return '<div onclick="openMsg(\\''+m.id+'\\')" class="flex items-center gap-3 py-4 px-5 border-b border-dashed border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer '+(m.read?'':'font-semibold')+'">'+
+    return '<div onclick="openMsg(\\''+m.id+'\\')" class="flex items-center gap-3 py-4 px-5 border-b border-dashed border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer '+(m.read?'':'font-semibold')+'">'+
       '<div class="w-1/2 md:w-3/12 min-w-0"><div class="truncate text-sm text-gray-900 dark:text-gray-100">'+nm+'</div><div class="text-xs text-gray-500 truncate">'+em+'</div></div>'+
       '<div class="w-1/2 md:w-7/12 truncate text-sm text-gray-700 dark:text-gray-300">'+escapeHtml(m.subject)+'</div>'+
       '<div class="hidden md:flex md:w-2/12 justify-end text-xs text-gray-500">'+fmtTime(m.received_at)+'</div></div>';
@@ -328,20 +328,20 @@ async function openMsg(id){
   var bodyBlock='<div id="msgBody" class="flex-1 flex flex-col overflow-auto min-h-[300px]"></div>';
   var tabs = isBp
     ? '<div class="msg-tabs"><button id="tabHtml" onclick="msgTab(\\'html\\')">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')">RAW</button></div>'
-    : '<div class="flex border-t border-gray-200 dark:border-gray-700 text-sm font-semibold"><button id="tabHtml" onclick="msgTab(\\'html\\')" class="flex-1 py-2.5 text-center">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')" class="flex-1 py-2.5 text-center border-l border-gray-200 dark:border-gray-700">RAW</button></div>';
+    : '<div class="flex border-t border-gray-200 dark:border-gray-800 text-sm font-semibold"><button id="tabHtml" onclick="msgTab(\\'html\\')" class="flex-1 py-2.5 text-center">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')" class="flex-1 py-2.5 text-center border-l border-gray-200 dark:border-gray-800">RAW</button></div>';
   // HP: buka pesan full-screen (semua tema), biar ga numpuk & ada tombol kembali.
   if(isMobile()){
     var ov=document.getElementById('msgOv');
     if(!ov){ ov=document.createElement('div'); ov.id='msgOv'; document.body.appendChild(ov); }
     ov.className='fixed inset-0 z-50 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col';
-    ov.innerHTML='<div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>'+
+    ov.innerHTML='<div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>'+
       '<div class="px-4 py-3 border-b border-dashed border-gray-200 dark:border-gray-700 font-mono text-xs">'+metaGrid+'</div>'+
       bodyBlock+tabs;
     ov.style.display='flex'; document.body.style.overflow='hidden';
     msgTab('html'); loadInbox(); return;
   }
   var mv=$('#msgView');
-  var topRow = TWO ? '' : '<div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>';
+  var topRow = TWO ? '' : '<div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>';
   mv.innerHTML = topRow+
     '<div class="pl-4 pr-9 py-3 border-b border-dashed border-gray-200 dark:border-gray-700 font-mono text-xs relative">'+(TWO?'<div class="absolute top-2 right-3">'+trash+'</div>':'')+metaGrid+'</div>'+
     bodyBlock+tabs;
