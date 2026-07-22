@@ -176,8 +176,19 @@ export class DB {
     const cutoff = Date.now() - retentionDays * 86_400_000;
     await this.d1.prepare(`DELETE FROM messages WHERE is_hub = 1 AND received_at < ?`).bind(cutoff).run();
   }
+  async trimHubMessages(maxKeep: number): Promise<void> {
+    if (!maxKeep || maxKeep < 1) return;
+    // Hapus email hub yang di luar N terbaru.
+    await this.d1.prepare(
+      `DELETE FROM messages WHERE is_hub = 1 AND id NOT IN
+         (SELECT id FROM messages WHERE is_hub = 1 ORDER BY received_at DESC LIMIT ?)`).bind(maxKeep).run();
+  }
   async countHubNew(): Promise<number> {
     const r = await this.d1.prepare(`SELECT COUNT(*) AS c FROM messages WHERE is_hub = 1 AND seen = 0`).first<{ c: number }>();
+    return r?.c ?? 0;
+  }
+  async countHubTotal(): Promise<number> {
+    const r = await this.d1.prepare(`SELECT COUNT(*) AS c FROM messages WHERE is_hub = 1`).first<{ c: number }>();
     return r?.c ?? 0;
   }
 

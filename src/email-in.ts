@@ -74,6 +74,13 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
       for (const to of hubRcpts) {
         try { await db.logHubMessage(to, from, subj, preview, html, text); } catch (e) { console.log("hub log err:", (e as Error).message); }
       }
+      // Enforce simpan-maks (drop yang paling lama kalau lewat batas).
+      ctx.waitUntil((async () => {
+        try {
+          const n = parseInt(await db.platformGet("hub_max_stored", "500"), 10);
+          if (!isNaN(n) && n > 0) await db.trimHubMessages(n);
+        } catch { /* ignore */ }
+      })());
       return;
     }
 
