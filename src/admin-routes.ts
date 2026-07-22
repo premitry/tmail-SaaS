@@ -60,7 +60,17 @@ export async function handleAdmin(req: Request, url: URL, env: Env, db: DB, tena
   // Logout
   if (path === "/admin/logout") {
     const s = await getSessionCtx(req, db);
-    if (s) await db.deleteSession(s.sessionId);
+    if (s) {
+      await db.deleteSession(s.sessionId);
+      // Kalau lagi impersonation (Login-as), keluar = balik ke sesi owner + dashboard owner.
+      if (s.impersonatorId) {
+        const owner = await db.getUserById(s.impersonatorId);
+        if (owner) {
+          const sid = await db.createSession(owner.id, null, 1000 * 60 * 60 * 24 * 7);
+          return new Response(null, { status: 303, headers: { "location": "/admin", "set-cookie": sessionCookie(sid, secure) } });
+        }
+      }
+    }
     return new Response(null, { status: 303, headers: { "location": "/admin", "set-cookie": clearCookie(secure) } });
   }
 
