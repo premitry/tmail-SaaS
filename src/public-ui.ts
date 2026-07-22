@@ -308,7 +308,12 @@ async function openMsg(id){
   var backBtn = TWO ? '<span></span>' : '<button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali ke Inbox</button>';
   mv.innerHTML = '<div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">'+backBtn+
       '<button onclick="delMsg(\\''+id+'\\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md">Delete</button></div>'+
-    '<div class="p-4 border-b border-dashed border-gray-200 dark:border-gray-700"><div class="text-base text-gray-900 dark:text-gray-100">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400">'+escapeHtml(res.sender)+' · '+fmtTime(res.received_at)+'</div></div>'+
+    '<div class="p-4 border-b border-dashed border-gray-200 dark:border-gray-700 font-mono text-xs"><div style="display:grid;grid-template-columns:max-content 1fr;gap:3px 12px">'+
+      '<span class="opacity-60">FROM:</span><span class="break-all">'+escapeHtml(res.sender)+'</span>'+
+      '<span class="opacity-60">TO:</span><span class="break-all">'+escapeHtml(addr)+'</span>'+
+      '<span class="opacity-60">DATE:</span><span>'+escapeHtml(new Date(res.received_at).toLocaleString())+'</span>'+
+      '<span class="opacity-60">SUBJECT:</span><span class="break-words font-bold">'+escapeHtml(res.subject)+'</span>'+
+    '</div></div>'+
     '<div id="msgBody" class="flex-1 flex flex-col overflow-auto min-h-[300px]"></div>'+
     '<div class="flex border-t border-gray-200 dark:border-gray-800 text-sm font-semibold"><button id="tabHtml" onclick="msgTab(\\'html\\')" class="flex-1 py-2.5 text-center">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')" class="flex-1 py-2.5 text-center border-l border-gray-200 dark:border-gray-800">RAW</button></div>';
   if(!TWO){ $('#inboxList').style.display='none'; }
@@ -332,6 +337,16 @@ function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,
 function escapeAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
 function fallbackCopy(t){ var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length); var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); status(ok?'tersalin!':'gagal copy', ok?'text-green-500':'text-red-500'); }
 function copyText(t){ if(!t) return; if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(t).then(function(){ status('tersalin!','text-green-500'); }).catch(function(){ fallbackCopy(t); }); } else { fallbackCopy(t); } }
+function shareLink(){ if(!addr) return; var link=location.origin+location.pathname+'?a='+encodeURIComponent(addr);
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  ov.innerHTML='<div style="background:#fff;color:#111;border-radius:12px;max-width:440px;width:100%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.35)"><div style="font-weight:700;font-size:16px;margin-bottom:4px">Bagikan Inbox</div><div style="font-size:13px;color:#666;margin-bottom:12px">Yang buka link ini bisa lihat inbox <b>'+escapeHtml(addr)+'</b>.</div><div style="display:flex;gap:8px"><input id="_sIn" readonly value="'+escapeAttr(link)+'" style="flex:1;border:1px solid #ccc;border-radius:8px;padding:9px 11px;font-size:13px;font-family:ui-monospace,monospace"/><button id="_sCp" style="background:#4f46e5;color:#fff;border:0;border-radius:8px;padding:9px 16px;font-weight:600;cursor:pointer">Salin</button></div><div style="text-align:right;margin-top:14px"><button id="_sCl" style="background:none;border:0;color:#666;cursor:pointer;font-size:13px">Tutup</button></div></div>';
+  document.body.appendChild(ov);
+  var inp=ov.querySelector('#_sIn'), cp=ov.querySelector('#_sCp');
+  cp.onclick=function(){ inp.select(); if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(link).catch(function(){document.execCommand('copy');}); } else { document.execCommand('copy'); } cp.textContent='Tersalin!'; setTimeout(function(){ cp.textContent='Salin'; },1500); };
+  ov.querySelector('#_sCl').onclick=function(){ document.body.removeChild(ov); };
+  inp.focus(); inp.select();
+}
 var _bc=$('#btnCreate'); if(_bc) _bc.onclick = () => createAddr($('#username')?$('#username').value.trim():'');
 var _br=$('#btnRandom'); if(_br) _br.onclick = () => createAddr('');
 document.querySelectorAll('.act').forEach(b => b.onclick = () => {
@@ -340,7 +355,7 @@ document.querySelectorAll('.act').forEach(b => b.onclick = () => {
   if(a==='refresh'){ loadInbox(); }
   if(a==='new'){ showCreate(); }
   if(a==='clear'){ deleteAddr(); }
-  if(a==='share'){ var _l=location.origin+location.pathname+'?a='+encodeURIComponent(addr); if(navigator.share){ navigator.share({title:CFG.brand,text:'Inbox '+addr,url:_l}).catch(function(){}); } else { copyText(_l); } }
+  if(a==='share'){ shareLink(); }
 });
 // Link share: ?a=alamat -> langsung buka inbox alamat itu.
 var _urlA=new URLSearchParams(location.search).get('a');
