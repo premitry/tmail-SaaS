@@ -123,8 +123,9 @@ function field(label,desc,inner){ return '<div class="mb-4"><label class="block 
 function card(title,desc,inner){ return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-5"><h3 class="font-semibold">'+title+'</h3>'+(desc?'<p class="text-xs text-gray-400 mb-4">'+desc+'</p>':'<div class="mb-4"></div>')+inner+'</div>'; }
 function saveBtn(fn){ return '<button onclick="'+fn+'" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg mt-1">Simpan</button>'; }
 function toggle(id,checked,label){ return '<label class="inline-flex items-center gap-3 cursor-pointer"><input id="'+id+'" type="checkbox" class="sr-only peer" '+(checked?'checked':'')+'/><span class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-checked:bg-indigo-600 rounded-full relative transition-colors after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></span>'+(label?'<span class="text-sm">'+label+'</span>':'')+'</label>'; }
-function openModal(inner,wide){ $('#modalRoot').innerHTML = '<div class="fixed inset-0 bg-black/50 z-40 flex items-start justify-center p-4 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white dark:bg-gray-800 w-full '+(wide?'max-w-2xl':'max-w-md')+' rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 mt-12">'+inner+'</div></div>'; }
+function openModal(inner,wide){ $('#modalRoot').innerHTML = '<div class="fixed inset-0 bg-black/50 z-40 flex items-start justify-center p-4 overflow-y-auto"><div class="bg-white dark:bg-gray-800 w-full '+(wide?'max-w-2xl':'max-w-md')+' rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 mt-12 relative"><button onclick="closeModal()" title="Tutup (Esc)" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-2xl leading-none">&times;</button>'+inner+'</div></div>'; }
 function closeModal(){ $('#modalRoot').innerHTML=''; }
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
 
 const NAV = {
   owner: [ ['#users','Users','fa-users'] ],
@@ -242,7 +243,7 @@ async function openMsg(id){
   const dt=new Date(m.received_at).toLocaleString();
   const bodyHtml = m.html ? m.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px;margin:0">'+esc(m.text||'')+'</pre>';
   openModal(
-    '<div class="flex justify-between items-start gap-3 mb-3"><h3 class="text-lg font-bold min-w-0 truncate">'+esc(m.subject||'(tanpa subjek)')+'</h3><button onclick="closeModal()" class="text-2xl leading-none text-gray-400">&times;</button></div>'+
+    '<div class="mb-3 pr-8"><h3 class="text-lg font-bold truncate">'+esc(m.subject||'(tanpa subjek)')+'</h3></div>'+
     '<div class="text-xs text-gray-500 space-y-0.5 mb-3 border-b border-gray-100 dark:border-gray-700 pb-3">'+
       '<div><b>Dari:</b> '+esc(m.from_addr)+'</div><div><b>Ke:</b> '+esc(m.to_addr)+'</div><div><b>Tanggal:</b> '+esc(dt)+'</div></div>'+
     '<iframe sandbox="allow-same-origin" class="w-full h-96 bg-white rounded-lg border border-gray-200 dark:border-gray-700" srcdoc="'+esc(bodyHtml)+'"></iframe>'+
@@ -458,7 +459,7 @@ async function showDetail(id){
   const created=new Date(d.user.created_at).toISOString().slice(0,10);
   const stat=(l,v)=>'<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center"><div class="text-lg font-bold">'+v+'</div><div class="text-xs text-gray-500">'+l+'</div></div>';
   openModal(
-    '<div class="flex justify-between items-start mb-4"><div><h3 class="text-lg font-bold">'+esc(d.user.email)+'</h3><div class="text-xs text-gray-400">'+esc(d.user.name||'')+' · '+esc(d.user.status)+'</div></div><button onclick="closeModal()" class="text-2xl leading-none text-gray-400">&times;</button></div>'+
+    '<div class="mb-4 pr-8"><h3 class="text-lg font-bold">'+esc(d.user.email)+'</h3><div class="text-xs text-gray-400">'+esc(d.user.name||'')+' · '+esc(d.user.status)+'</div></div>'+
     '<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">'+stat('Email dibuat',d.stats.emails)+stat('Pesan diterima',d.stats.messages)+stat('Domain',d.domains.length)+stat('Web',d.hostnames.length)+'</div>'+
     '<div class="grid md:grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600 dark:text-gray-300 mb-2">'+
       '<div><b>Dibuat:</b> '+created+'</div><div><b>IMAP:</b> '+(d.settings.has_imap?esc(d.settings.imap_host||'terisi'):'<span class=\"text-red-500\">belum</span>')+'</div>'+
