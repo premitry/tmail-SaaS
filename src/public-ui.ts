@@ -180,7 +180,7 @@ export function renderPublicPage(o: PublicOpts): string {
   <div class="max-w-4xl mx-auto flex flex-col gap-5">
     <div class="bp-card px-6 py-4 flex flex-col gap-3">
       <div class="flex items-center justify-between gap-3">${brandHtml}<div class="flex items-center gap-3 text-sm" style="color:${c.primary}">${statusEl}${socials}</div></div>
-      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs">API</a><a href="#">FAQ</a><a href="#">PRIVACY</a><a href="#">CONTACT</a></nav>
+      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a></nav>
     </div>
     <div class="bp-card px-6 py-8">
       <h1 class="text-3xl md:text-4xl font-bold text-center mb-3" style="color:${c.primary}">${esc(heading)}</h1>
@@ -206,11 +206,11 @@ export function renderPublicPage(o: PublicOpts): string {
     <div id="inboxWrap" class="grid md:grid-cols-2 gap-5" style="display:none">
       <div class="bp-card p-0 overflow-hidden">
         <div class="bp-head" style="background:${c.primary}">INBOX (<span id="inboxCount">0</span>)</div>
-        <div id="inboxList" class="min-h-[320px]"></div>
+        <div id="inboxList" class="min-h-[460px] max-h-[600px] overflow-y-auto"></div>
       </div>
       <div class="bp-card p-0 overflow-hidden flex flex-col">
         <div class="bp-head" style="background:${c.primary}">PESAN</div>
-        <div id="msgView" class="min-h-[320px] flex flex-col"><div class="flex-1 flex items-center justify-center text-sm py-16" style="color:${c.primary};opacity:.5">Pilih email untuk dibaca</div></div>
+        <div id="msgView" class="min-h-[460px] flex flex-col"><div class="flex-1 flex items-center justify-center text-sm py-16" style="color:${c.primary};opacity:.5">Pilih email untuk dibaca</div></div>
       </div>
     </div>
     <footer class="text-center text-white text-sm py-2 font-bold" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">&copy; ${year} ${esc(o.brand)}</footer>
@@ -316,8 +316,11 @@ document.querySelectorAll('.act').forEach(b => b.onclick = () => {
   if(a==='refresh'){ loadInbox(); }
   if(a==='new'){ showCreate(); }
   if(a==='clear'){ deleteAddr(); }
-  if(a==='share'){ if(navigator.share){ navigator.share({title:CFG.brand,text:addr}).catch(function(){}); } else copyText(addr); }
+  if(a==='share'){ var _l=location.origin+location.pathname+'?a='+encodeURIComponent(addr); if(navigator.share){ navigator.share({title:CFG.brand,text:'Inbox '+addr,url:_l}).catch(function(){}); } else { copyText(_l); } }
 });
+// Link share: ?a=alamat -> langsung buka inbox alamat itu.
+var _urlA=new URLSearchParams(location.search).get('a');
+if(_urlA){ addr=_urlA.toLowerCase(); if(addrs.indexOf(addr)<0) addrs.push(addr); localStorage.setItem(AKEY,addr); localStorage.setItem(LKEY,JSON.stringify(addrs)); }
 if(addr){ showActive(); loadInbox(); connectWS(); }
 else if(CFG.domains && CFG.domains.length){ createAddr(''); }  // belum ada alamat -> auto-generate
 setInterval(()=>{ if(addr) loadInbox(); }, 15000);
