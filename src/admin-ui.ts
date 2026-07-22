@@ -2,110 +2,90 @@
 import { head, esc } from "./ui";
 import { DEFAULT_LOGO, THEME_PREVIEWS } from "./assets";
 
-// Skin Win98/Y2K — samain sama Mail Hub biar konsisten.
-const HUB_SKIN = `
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;font:13px/1.45 Tahoma,"Segoe UI",Arial,sans-serif;color:#000;background-color:#7cbec9;background-image:linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px);background-size:50px 50px;background-attachment:fixed}
-a{color:#000080;text-decoration:none}
-a:hover{text-decoration:underline}
-.muted{color:#404040}
-.err{color:#a00000;font-weight:bold}
-b{font-weight:bold}
-code{background:#fff;color:#000080;padding:0 3px;border:1px solid #808080;font:inherit}
-.win{background:#c0c0c0;border:2px solid;border-color:#dfdfdf #808080 #808080 #dfdfdf;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000;display:flex;flex-direction:column;min-height:0}
-.titlebar{display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold;padding:3px 6px;font-size:13px;flex:0 0 auto}
-.win-body{padding:8px;overflow:auto;flex:1;min-height:0}
-.btn{font:inherit;background:#c0c0c0;color:#000;border:2px solid;border-color:#fff #808080 #808080 #fff;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #000;padding:3px 10px;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block}
-.btn:active{border-color:#808080 #fff #fff #808080;box-shadow:inset -1px -1px 0 #dfdfdf,inset 1px 1px 0 #000}
-.btn.danger{color:#800000;font-weight:bold}
-.btn.primary{color:#000080;font-weight:bold}
-input,select,textarea{font:inherit;background:#fff;color:#000;border:2px solid;border-color:#808080 #fff #fff #808080;padding:3px 5px}
-.brand{font-weight:bold;letter-spacing:2px;background:#000080;color:#fff;padding:2px 8px}
-.badge{background:#000080;color:#fff;padding:0 6px;font-weight:bold}
-.box{border:2px solid;border-color:#808080 #fff #fff #808080;background:#c0c0c0;margin-bottom:10px}
-.box>.bt{background:#000080;color:#fff;font-weight:bold;padding:2px 6px;font-size:12px}
-.box>.bd{padding:8px}
-`;
-
 export function renderLogin(brand: string, role: "owner" | "buyer", error = ""): string {
   const title = role === "owner" ? "Owner Panel" : brand + " Admin";
-  return `<!doctype html><html lang="id"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)} — Login</title>
-<link rel="stylesheet" href="/assets/hub-fa.css">
-<style>${HUB_SKIN}
-.login{max-width:320px;margin:12vh auto;width:90%}
-.login input{width:100%;margin:6px 0}
-</style>
-</head><body>
-<div class="login"><div class="win">
-  <div class="titlebar">🔒 ${role === "owner" ? "OWNER PANEL" : esc(brand.toUpperCase()) + " ADMIN"} — LOGIN</div>
-  <form id="f" class="win-body">
-    <div id="loginErr" style="display:${error ? "block" : "none"};margin-bottom:6px" class="err">${error ? esc(error) : ""}</div>
-    <div style="margin-bottom:4px">Masuk sebagai <b>${role === "owner" ? "Owner" : "Buyer"}</b>:</div>
-    <input name="email" type="text" placeholder="username / email" autocomplete="username" autofocus>
-    <input name="password" type="password" placeholder="password" autocomplete="current-password">
-    <button class="btn" type="submit" style="width:100%;margin-top:8px">Masuk »</button>
+  return `${head(title + " — Login", '<style>html:not(.dark) body{background-color:#e4e6eb}html:not(.dark) .bg-white{background-color:#f4f5f7!important}html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}</style>')}
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex items-center justify-center px-4">
+  <form id="f" class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 space-y-4">
+    <div class="text-center">
+      <div class="text-4xl mb-2">${role === "owner" ? "🛡️" : "📮"}</div>
+      <h1 class="text-xl font-bold">${esc(title)}</h1>
+    </div>
+    <div id="loginErr" class="hidden bg-red-100 text-red-700 text-sm p-3 rounded-lg text-center">${error ? esc(error) : ""}</div>
+    <input name="email" type="text" placeholder="Email atau username" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <input name="password" type="password" placeholder="Password" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg">Masuk</button>
   </form>
-</div></div>
-<script>
-var _et;
-function showErr(m){var e=document.getElementById('loginErr');e.textContent=m;e.style.display='block';clearTimeout(_et);_et=setTimeout(function(){e.style.display='none';},3000);}
-document.getElementById('f').onsubmit=async function(e){e.preventDefault();var fd=new FormData(e.target);try{var r=await fetch('/admin/login'+location.search,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:fd.get('email'),password:fd.get('password')})});var d=await r.json();if(d.ok)location.href='/admin'+location.search;else showErr(d.error||'gagal');}catch(_){showErr('gagal terhubung');}};
-</script>
+  <script>
+    var _et;
+    function showErr(m){ var e=document.getElementById('loginErr'); e.textContent=m; e.classList.remove('hidden'); clearTimeout(_et); _et=setTimeout(function(){ e.classList.add('hidden'); }, 3000); }
+    document.getElementById('f').onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        const r = await fetch('/admin/login' + location.search, { method:'POST', headers:{'content-type':'application/json'},
+          body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }) });
+        const d = await r.json();
+        if(d.ok) location.href = '/admin' + location.search;
+        else showErr(d.error || 'gagal');
+      } catch(_) { showErr('gagal terhubung'); }
+    };
+  </script>
 </body></html>`;
 }
 
-// Skin Win98 buat admin shell + override Tailwind classes yang ada di content view.
-const SB_STYLE = `<style>${HUB_SKIN}
-/* Layout SPA */
-#sb{width:220px;position:fixed;inset:8px auto 8px 8px;z-index:30;transition:transform .2s ease}
-#sbBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,40,.35);z-index:20}
-#main{margin-left:236px;padding:8px 8px 8px 0;min-height:100vh;box-sizing:border-box}
-#topbar{display:flex;align-items:center;gap:6px;padding:4px 6px;background:#c0c0c0;border:2px solid;border-color:#dfdfdf #808080 #808080 #dfdfdf;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000;margin-bottom:8px}
-#view{padding:12px}
-@media(max-width:820px){#sb{transform:translateX(-110%)}body.sb-open #sb{transform:translateX(0)}body.sb-open #sbBackdrop{display:block}#main{margin-left:0;padding:8px}}
-/* Sidebar isi */
-#sb .navlink{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid transparent;color:#000;cursor:pointer;text-decoration:none}
-#sb .navlink:hover{background:#000080;color:#fff;border-color:#000}
-#sb .navlink.active{background:#000080;color:#fff;font-weight:bold;border-color:#000}
-#sb .navlink i{width:18px;text-align:center}
-#userMenu{position:absolute;bottom:34px;left:6px;right:6px;background:#c0c0c0;border:2px solid;border-color:#dfdfdf #808080 #808080 #dfdfdf;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000,3px 3px 8px rgba(0,0,0,.4);z-index:5}
-#userMenu a,#userMenu button{display:block;width:100%;text-align:left;padding:4px 10px;background:none;border:0;font:inherit;cursor:pointer;color:#000}
-#userMenu a:hover,#userMenu button:hover{background:#000080;color:#fff}
-/* Content view pakai skin normal (bukan Win98). Reset font di dalam #view biar Tailwind normal. */
-#view{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937}
+const SB_STYLE = `<style>
+#sb{transition:transform .2s,width .15s}
+#sbBackdrop{display:none}
+@media(min-width:768px){
+  .sbc #sb{width:4rem}
+  .sbc #sb .lbl,.sbc #sb #brandName,.sbc #sb #userName{display:none}
+  .sbc #sb .navlink,.sbc #sb #userBtn{justify-content:center}
+  .sbc main{margin-left:4rem}
+}
+@media(max-width:767px){
+  #sb{transform:translateX(-100%);width:15rem}
+  body.sb-open #sb{transform:translateX(0)}
+  body.sb-open #sbBackdrop{display:block}
+}
+/* Tema terang dilembutin biar gak silau */
+html:not(.dark) body{background-color:#e4e6eb}
+html:not(.dark) .bg-white{background-color:#f4f5f7!important}
+html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}
+html:not(.dark) .bg-gray-50{background-color:#ecedf1!important}
 </style>`;
 
 export function renderAdminShell(brand: string): string {
   return `${head(brand + " — Admin", SB_STYLE)}
-<body>
-<div id="sb" class="win">
-  <div class="titlebar">📮 <span id="brandName" style="letter-spacing:1px">${esc(brand.toUpperCase())}</span></div>
-  <div style="padding:6px;display:flex;flex-direction:column;flex:1;min-height:0">
-    <nav id="nav" style="flex:1;overflow:auto"></nav>
-    <div style="border-top:1px solid #808080;padding-top:6px;margin-top:6px;position:relative">
-      <button id="userBtn" class="btn" style="width:100%;text-align:left">
-        <i class="fas fa-user-circle"></i> <span id="userName">-</span>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+<div class="flex min-h-screen">
+  <aside id="sb" class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 z-30">
+    <div class="h-16 flex items-center gap-2 px-4 border-b border-gray-200 dark:border-gray-800 font-bold text-lg overflow-hidden">
+      <span class="text-2xl">📮</span><span id="brandName" class="truncate">${esc(brand)}</span>
+    </div>
+    <nav id="nav" class="flex-1 p-3 space-y-1 text-sm"></nav>
+    <div class="p-3 border-t border-gray-200 dark:border-gray-800 text-sm relative">
+      <button id="userBtn" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+        <i class="fas fa-user-circle text-lg"></i><span id="userName" class="truncate">-</span>
       </button>
-      <div id="userMenu" class="hidden">
-        <a href="#profile"><i class="fas fa-user mr-1"></i>Profile</a>
-        <button id="logoutBtn" style="color:#800000;font-weight:bold"><i class="fas fa-sign-out-alt mr-1"></i>Logout</button>
+      <div id="userMenu" class="hidden absolute bottom-14 left-3 right-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
+        <a href="#profile" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-user mr-2"></i>Profile</a>
+        <button id="logoutBtn" class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
       </div>
     </div>
-  </div>
-</div>
-<div id="sbBackdrop" onclick="closeDrawer()"></div>
-<div id="main">
-  <div id="topbar">
-    <button onclick="toggleSidebar()" title="Menu" class="btn">☰</button>
-    <span class="brand">✉ ${esc(brand.toUpperCase())} — ADMIN</span>
-    <span style="flex:1"></span>
-    <a class="btn" href="/admin">↻</a>
-  </div>
-  <div id="banner"></div>
-  <div id="view" style="background:#f4f5f7;padding:24px;min-height:calc(100vh - 80px)">Memuat…</div>
+  </aside>
+  <div id="sbBackdrop" onclick="closeDrawer()" class="fixed inset-0 bg-black/40 z-20"></div>
+  <main class="flex-1 md:ml-60 min-w-0">
+    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 px-4 md:px-5 sticky top-0 z-10">
+      <button onclick="toggleSidebar()" title="Menu / kecilkan sidebar" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fas fa-bars"></i></button>
+      <div class="ml-auto"></div>
+      <button onclick="toggleDark()" title="Tema gelap/terang" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg">
+        <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+      </button>
+    </header>
+    <div id="banner"></div>
+    <div id="view" class="p-4 md:p-8 max-w-4xl mx-auto">Memuat…</div>
+  </main>
 </div>
 <div id="modalRoot"></div>
 <script>window.DEFAULT_LOGO=${JSON.stringify(DEFAULT_LOGO)};window.THEME_PREVIEWS=${JSON.stringify(THEME_PREVIEWS)};</script>
@@ -162,7 +142,7 @@ function renderNav(){
   const items = NAV[ME.role] || [];
   $('#nav').innerHTML = items.map(x=>'<a href="'+x[0]+QS+'" title="'+x[1]+'" class="navlink flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-h="'+x[0]+'"><i class="fas '+x[2]+' w-4 text-center"></i><span class="lbl">'+x[1]+'</span></a>').join('');
 }
-function setActive(hash){ document.querySelectorAll('.navlink').forEach(a=>{ const on=a.dataset.h===hash; a.classList.toggle('active',on); }); }
+function setActive(hash){ document.querySelectorAll('.navlink').forEach(a=>{ const on=a.dataset.h===hash; a.classList.toggle('bg-indigo-50',on); a.classList.toggle('dark:bg-gray-700',on); a.classList.toggle('text-indigo-600',on); a.classList.toggle('font-semibold',on); }); }
 
 function expiryBanner(){
   if(ME.role!=='buyer') return;
