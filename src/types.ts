@@ -59,6 +59,7 @@ export interface BuyerSettings {
   socials_json: string;
   lock_json: string;
   updated_at: number | null;
+  last_worker_email_at: number;
 }
 
 export interface DomainRow {

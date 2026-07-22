@@ -73,9 +73,9 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
     await storeParsed(env, addr, parsed, from, db, buyerId);
   }
 
-  // Naikin counter pemakaian per buyer (1 email = 1 hit; multi-recipient ke buyer yang sama
-  // dihitung 1 biar wajar).
+  // Naikin counter pemakaian per buyer + tandai Email Routing aktif (utk deteksi status di UI).
   for (const bid of seenBuyers) {
     ctx.waitUntil(db.incrMessages(bid, 1).catch(() => {}));
+    ctx.waitUntil(db.touchWorkerEmail(bid).catch(() => {}));
   }
 }

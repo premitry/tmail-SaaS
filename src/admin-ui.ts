@@ -325,25 +325,35 @@ async function vSettings(){
     '<div class="flex flex-wrap gap-6">'+colorField('g_c1','Warna Primer','Sidebar.',s.color_primary)+colorField('g_c2','Sekunder','Tombol Create.',s.color_secondary)+colorField('g_c3','Tersier','Tombol Random.',s.color_tertiary)+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
-  card('Email Routing (rekomendasi)','Terima email langsung tanpa VPS/IMAP — realtime & gratis.',
-    '<div class="text-sm space-y-3">'+
-      '<div class="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900 text-indigo-900 dark:text-indigo-200 flex gap-2"><i class="fas fa-info-circle mt-0.5"></i><div>Aktifkan Email Routing di akun Cloudflare kamu untuk tiap domain, lalu forward semua email ke <b class="font-mono select-all">catchall@imapku.icu</b>. Sistem otomatis pilah email ke inbox pengunjung sesuai alamat asli.</div></div>'+
-      '<div><b class="text-xs uppercase text-gray-500">Langkah setup (di dashboard Cloudflare akun kamu):</b>'+
-      '<ol class="list-decimal ml-5 space-y-1 mt-1 text-gray-700 dark:text-gray-300">'+
-        '<li>Buka <a href="https://dash.cloudflare.com" target="_blank" class="text-indigo-600 underline">dash.cloudflare.com</a> → pilih domainmu → <b>Email → Email Routing</b>.</li>'+
-        '<li>Klik <b>Enable Email Routing</b> (CF akan menambahkan MX records otomatis).</li>'+
-        '<li>Di tab <b>Destination addresses</b>, tambah <span class="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">catchall@imapku.icu</span> → cek kotak masuk verifikasi (kami akan bantu auto-verifikasi).</li>'+
-        '<li>Di tab <b>Routing rules → Catch-all address</b>: Action <b>Send to an email</b>, Destination <span class="font-mono">catchall@imapku.icu</span>, Save.</li>'+
-        '<li>Selesai. Kirim email tes ke alamat apa pun di domainmu — muncul di Inbox dalam 1-2 detik.</li>'+
-      '</ol></div>'+
-    '</div>')+
-  card('IMAP (fallback)','Opsional. Kosongkan Host kalau sudah pakai Email Routing di atas.',
+  card('Terima Email','Pilih cara TMail menerima email masuk untuk domain-domainmu.',
+    // Toggle mode
+    (function(){ var mode = s.imap_host ? 'imap' : 'worker'; window.__mailMode = mode;
+      var opt = function(k,label,desc){ var on = mode===k;
+        return '<label class="flex-1 cursor-pointer border-2 rounded-lg p-3 flex gap-3 items-start transition '+(on?'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30':'border-gray-200 dark:border-gray-700 hover:border-gray-300')+'">'+
+          '<input type="radio" name="mail_mode" value="'+k+'" '+(on?'checked':'')+' onchange="setMailMode(\''+k+'\')" class="mt-1"/>'+
+          '<div><div class="font-semibold text-sm">'+label+'</div><div class="text-xs text-gray-500 mt-0.5">'+desc+'</div></div></label>';
+      };
+      return '<div class="flex flex-col md:flex-row gap-3 mb-1">'+opt('worker','Email Routing (rekomendasi)','Realtime, tanpa VPS. Setup 1x di dashboard CF.')+opt('imap','IMAP','Kalau kamu punya mailbox catch-all sendiri.')+'</div>';
+    })()+
+    // === Panel Email Routing (worker) ===
+    '<div id="modeWorker" style="display:'+(s.imap_host?'none':'block')+'" class="text-sm space-y-2">'+
+      (function(){ var t=s.last_worker_email_at||0; var ago=t?Math.floor((Date.now()-t)/60000):0;
+        var badge = t
+          ? '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300 text-sm font-medium"><i class="fas fa-check-circle"></i> Email Routing aktif · terakhir '+(ago<1?'baru saja':ago<60?ago+' menit lalu':ago<1440?Math.floor(ago/60)+' jam lalu':Math.floor(ago/1440)+' hari lalu')+'</div>'
+          : '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-300 text-sm font-medium"><i class="fas fa-exclamation-circle"></i> Belum terdeteksi · setup dulu di dashboard CF</div>';
+        return badge;
+      })()+
+      '<div class="text-gray-600 dark:text-gray-400">Forward semua email tiap domain ke <b class="font-mono select-all bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">catchall@imapku.icu</b></div>'+
+    '</div>'+
+    // === Panel IMAP ===
+    '<div id="modeImap" style="display:'+(s.imap_host?'block':'none')+'" class="space-y-3">'+
     field('Host','mis. imap.domain.com',inp('i_host',s.imap_host))+
     '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+field('TLS','Implicit TLS.',toggle('i_tls',s.imap_tls,'993'))+'</div>'+
     field('Username','User login mailbox.',inp('i_user',s.imap_user))+
     field('Password',(s.has_imap_pass?'Sudah tersimpan — kosongkan jika tak ingin ganti.':'Password mailbox (dienkripsi).'),'<input id="i_pass" type="password" placeholder="'+(s.has_imap_pass?'••••••':'')+'" class="'+INP+'"/>')+
     '<div class="flex flex-wrap gap-2 items-center"><button onclick="testImap()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-plug mr-1"></i> Test koneksi</button>'+saveBtn('saveImap()')+'<button onclick="pollNow()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-download mr-1"></i> Tarik email sekarang</button></div>'+
-    '<div id="imapTestResult" class="text-sm mt-2"></div>')+
+    '<div id="imapTestResult" class="text-sm mt-2"></div>'+
+    '</div>')+
   card('Configuration','Aturan pembuatan alamat & penyimpanan email.',
     field('Batas alamat / pengunjung','Maksimum alamat aktif per pengunjung.','<input id="c_limit" type="number" value="'+esc(s.email_limit)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+
     field('Hapus email otomatis setelah','Email di Inbox dihapus setelah durasi ini. 0 = simpan selamanya.',
@@ -388,6 +398,12 @@ function saveGeneral(){ put({brand_name:$('#g_brand').value,logo_url:window.__im
 function saveHero(){ put({hero_heading:$('#h_head').value,hero_subtitle:$('#h_sub').value}); }
 function savePages(){ put({page_faq:$('#p_faq').value,page_privacy:$('#p_priv').value,page_contact:$('#p_contact').value}); }
 function imapPayload(){ return {imap_host:$('#i_host').value,imap_port:+$('#i_port').value,imap_user:$('#i_user').value,imap_tls:$('#i_tls').checked?1:0,imap_pass:$('#i_pass').value}; }
+function setMailMode(m){ window.__mailMode=m; var w=$('#modeWorker'), i=$('#modeImap'); if(w) w.style.display = m==='worker'?'block':'none'; if(i) i.style.display = m==='imap'?'block':'none';
+  // Re-highlight card border
+  document.querySelectorAll('input[name=mail_mode]').forEach(function(r){ var lbl=r.closest('label'); if(!lbl) return; lbl.classList.toggle('border-indigo-500',r.checked); lbl.classList.toggle('bg-indigo-50',r.checked); lbl.classList.toggle('dark:bg-indigo-950/30',r.checked); lbl.classList.toggle('border-gray-200',!r.checked); lbl.classList.toggle('dark:border-gray-700',!r.checked); });
+  // Kalau pindah ke Email Routing, otomatis kosongin host IMAP di server (buyer nggak perlu ngapain lagi).
+  if(m==='worker' && window.__S && window.__S.imap_host){ put({imap_host:'',imap_user:''}).then(function(){ window.__S.imap_host=''; window.__S.imap_user=''; }); }
+}
 function imapResult(cls,html){ var r=$('#imapTestResult'); if(r){ r.className='text-sm mt-2 '+cls; r.innerHTML=html; } }
 async function testImap(){ imapResult('text-gray-500','<i class="fas fa-spinner fa-spin"></i> Menguji koneksi…'); const res=await api('/settings/imap-test',{method:'POST',body:JSON.stringify(imapPayload())}); if(res.ok){ imapResult('text-green-600','<i class="fas fa-check-circle"></i> Berhasil konek ke IMAP'); } else { imapResult('text-red-600','<i class="fas fa-times-circle"></i> Gagal: '+esc(res.error||'tidak diketahui')); } return res.ok; }
 async function saveImap(){ imapResult('text-gray-500','<i class="fas fa-spinner fa-spin"></i> Menguji koneksi sebelum simpan…'); const res=await api('/settings/imap-test',{method:'POST',body:JSON.stringify(imapPayload())}); if(!res.ok){ imapResult('text-red-600','<i class="fas fa-times-circle"></i> Gagal konek — TIDAK disimpan: '+esc(res.error||'')); return; } const p=imapPayload(); if(!p.imap_pass) delete p.imap_pass; await put(p); imapResult('text-green-600','<i class="fas fa-check-circle"></i> Terhubung & tersimpan'); }

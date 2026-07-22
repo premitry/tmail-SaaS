@@ -129,6 +129,10 @@ export class DB {
     await this.d1.prepare(`UPDATE buyer_settings SET imap_last_uid = ? WHERE buyer_id = ?`)
       .bind(uidVal, buyerId).run();
   }
+  async touchWorkerEmail(buyerId: string): Promise<void> {
+    await this.d1.prepare(`UPDATE buyer_settings SET last_worker_email_at = ? WHERE buyer_id = ?`)
+      .bind(Date.now(), buyerId).run();
+  }
 
   /* ─────────── domains ─────────── */
   async listDomains(buyerId: string): Promise<DomainRow[]> {

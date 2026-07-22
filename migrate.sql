@@ -20,3 +20,6 @@ ALTER TABLE buyer_settings ADD COLUMN delete_after_minutes INTEGER NOT NULL DEFA
 ALTER TABLE buyer_settings ADD COLUMN favicon_url TEXT NOT NULL DEFAULT '';
 -- default tema baru = nebula (terapkan ke yang masih 'default')
 UPDATE buyer_settings SET theme='nebula' WHERE theme='default';
+
+-- Deteksi Email Routing aktif: timestamp email terakhir yg masuk via email() handler CF.
+ALTER TABLE buyer_settings ADD COLUMN last_worker_email_at INTEGER NOT NULL DEFAULT 0;
