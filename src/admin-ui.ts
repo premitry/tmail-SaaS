@@ -120,6 +120,7 @@ if(localStorage.getItem('sbc')==='1') document.body.classList.add('sbc');
 const INP = 'w-full max-w-md rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500';
 function inp(id,val,type,ph){ return '<input id="'+id+'" type="'+(type||'text')+'" '+(ph?'placeholder="'+esc(ph)+'" ':'')+'value="'+esc(val)+'" class="'+INP+'"/>'; }
 function field(label,desc,inner){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label>'+(desc?'<p class="text-xs text-gray-400 mb-1.5">'+desc+'</p>':'<div class="mb-1.5"></div>')+inner+'</div>'; }
+function colorField(id,label,desc,val){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label><p class="text-xs text-gray-400 mb-1.5">'+desc+'</p><div class="flex items-center gap-2"><input id="'+id+'" type="color" value="'+esc(val)+'" oninput="var t=document.getElementById(\''+id+'_t\');if(t)t.textContent=this.value" class="w-12 h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-white dark:bg-gray-800"/><span id="'+id+'_t" class="text-sm font-mono">'+esc(val)+'</span></div></div>'; }
 function card(title,desc,inner){ return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-5"><h3 class="font-semibold">'+title+'</h3>'+(desc?'<p class="text-xs text-gray-400 mb-4">'+desc+'</p>':'<div class="mb-4"></div>')+inner+'</div>'; }
 function saveBtn(fn){ return '<button onclick="'+fn+'" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg mt-1">Simpan</button>'; }
 function toggle(id,checked,label){ return '<label class="inline-flex items-center gap-3 cursor-pointer"><input id="'+id+'" type="checkbox" class="sr-only peer" '+(checked?'checked':'')+'/><span class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-checked:bg-indigo-600 rounded-full relative transition-colors after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></span>'+(label?'<span class="text-sm">'+label+'</span>':'')+'</label>'; }
@@ -288,7 +289,7 @@ async function vSettings(){
     field('Nama Aplikasi','Nama brand yang tampil di web & admin.',inp('g_brand',s.brand_name))+
     imgField('logo','Logo','Upload gambar (maks 200KB). Kosong = bawaan TMail.')+
     imgField('favicon','Favicon','Ikon tab browser. Kosong = bawaan TMail.')+
-    '<div class="flex flex-wrap gap-4">'+field('Warna Primer','Sidebar.',inp('g_c1',s.color_primary,'color'))+field('Sekunder','Tombol Create.',inp('g_c2',s.color_secondary,'color'))+field('Tersier','Tombol Random.',inp('g_c3',s.color_tertiary,'color'))+'</div>'+
+    '<div class="flex flex-wrap gap-6">'+colorField('g_c1','Warna Primer','Sidebar.',s.color_primary)+colorField('g_c2','Sekunder','Tombol Create.',s.color_secondary)+colorField('g_c3','Tersier','Tombol Random.',s.color_tertiary)+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
   card('IMAP','Mailbox catch-all yang menerima email semua domainmu.',
