@@ -193,13 +193,13 @@ export function renderPublicPage(o: PublicOpts): string {
   } else {
     /* BLUEPRINT: retro cetak-biru, monospace, kartu krem border tebal */
     const gridBg = `background-color:${c.primary};background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:26px 26px`;
-    const brandHtml = o.logoUrl ? `<img src="${esc(logo)}" class="max-h-9 object-contain" />` : `<div class="flex items-center gap-2"><div class="w-9 h-9 flex items-center justify-center rounded" style="border:2px solid ${c.primary}"><i class="fas fa-envelope-open-text" style="color:${c.primary}"></i></div><div class="text-2xl font-bold tracking-wide uppercase" style="color:${c.primary}">${esc(o.brand)}</div></div>`;
+    const brandHtml = o.logoUrl ? `<img src="${esc(logo)}" class="max-h-9 object-contain" />` : `<div class="flex items-center gap-2"><div class="w-9 h-9 flex items-center justify-center rounded" style="border:2px solid #efe9dd"><i class="fas fa-envelope-open-text" style="color:#efe9dd"></i></div><div class="text-2xl font-bold tracking-wide uppercase" style="color:#efe9dd">${esc(o.brand)}</div></div>`;
     bodyHtml = `
 <div class="bp-body min-h-screen p-4 md:p-8" style="${gridBg}">
   <div class="max-w-4xl mx-auto flex flex-col gap-5">
-    <div class="bp-card px-6 py-4 flex flex-col gap-3">
-      <div class="flex items-center justify-between gap-3">${brandHtml}<div class="flex items-center gap-3 text-sm" style="color:${c.primary}">${statusEl}${socials}</div></div>
-      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a>${o.hasFaq ? '<a href="/faq">FAQ</a>' : ""}${o.hasPrivacy ? '<a href="/privacy">PRIVACY</a>' : ""}${o.hasContact ? '<a href="/contact">CONTACT</a>' : ""}</nav>
+    <div class="bp-card overflow-hidden">
+      <div class="flex items-center justify-between gap-3 px-6 py-4" style="background:${c.primary}">${brandHtml}<div class="flex items-center gap-3 text-sm" style="color:#efe9dd">${statusEl}${socials}</div></div>
+      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm px-6 py-3" style="color:${c.primary};border-top:2px solid #16233f"><a href="/">HOME</a><a href="/docs" target="_blank">API</a>${o.hasFaq ? '<a href="/faq">FAQ</a>' : ""}${o.hasPrivacy ? '<a href="/privacy">PRIVACY</a>' : ""}${o.hasContact ? '<a href="/contact">CONTACT</a>' : ""}</nav>
     </div>
     <div class="bp-card px-6 py-8">
       <h1 class="text-3xl md:text-4xl font-bold text-center mb-3" style="color:${c.primary}">${esc(heading)}</h1>
@@ -305,7 +305,7 @@ async function openMsg(id){
   window.__mHtml = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
   window.__mRaw = 'From: '+(res.sender||'')+'\\nTo: '+addr+'\\nSubject: '+(res.subject||'')+'\\nDate: '+new Date(res.received_at).toLocaleString()+'\\n\\n'+(res.text||'(email format HTML — buka tab HTML)');
   var mv=$('#msgView');
-  var trash='<button onclick="delMsg(\\''+id+'\\')" title="Hapus email" class="text-red-600 hover:text-red-700"><i class="fas fa-trash"></i></button>';
+  var trash='<button onclick="delMsg(\\''+id+'\\')" title="Hapus email" class="text-red-600 hover:text-red-700 text-2xl"><i class="fas fa-trash"></i></button>';
   var topRow = TWO ? '' : '<div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>';
   mv.innerHTML = topRow+
     '<div class="pl-4 pr-9 py-3 border-b border-dashed border-gray-200 dark:border-gray-700 font-mono text-xs relative">'+(TWO?'<div class="absolute top-2 right-3">'+trash+'</div>':'')+'<div style="display:grid;grid-template-columns:max-content 1fr;gap:3px 12px">'+
