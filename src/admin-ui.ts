@@ -329,9 +329,12 @@ async function vSettings(){
     // Toggle mode
     (function(){ var mode = s.imap_host ? 'imap' : 'worker'; window.__mailMode = mode;
       var opt = function(k,label,desc){ var on = mode===k;
-        return '<label class="flex-1 cursor-pointer border-2 rounded-lg p-3 flex gap-3 items-start transition '+(on?'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30':'border-gray-200 dark:border-gray-700 hover:border-gray-300')+'">'+
+        var st = on
+          ? 'border:2px solid #6366f1;background:rgba(99,102,241,.08)'
+          : 'border:2px solid #e5e7eb;background:transparent';
+        return '<label class="mmOpt flex-1 cursor-pointer rounded-lg p-3 flex gap-3 items-start" data-mode="'+k+'" style="'+st+'">'+
           '<input type="radio" name="mail_mode" value="'+k+'" '+(on?'checked':'')+' onchange="setMailMode(\''+k+'\')" class="mt-1"/>'+
-          '<div><div class="font-semibold text-sm">'+label+'</div><div class="text-xs text-gray-500 mt-0.5">'+desc+'</div></div></label>';
+          '<div><div class="font-semibold text-sm text-gray-900 dark:text-gray-100">'+label+'</div><div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">'+desc+'</div></div></label>';
       };
       return '<div class="flex flex-col md:flex-row gap-3 mb-1">'+opt('worker','Email Routing (rekomendasi)','Realtime, tanpa VPS. Setup 1x di dashboard CF.')+opt('imap','IMAP','Kalau kamu punya mailbox catch-all sendiri.')+'</div>';
     })()+
@@ -339,11 +342,11 @@ async function vSettings(){
     '<div id="modeWorker" style="display:'+(s.imap_host?'none':'block')+'" class="text-sm space-y-2">'+
       (function(){ var t=s.last_worker_email_at||0; var ago=t?Math.floor((Date.now()-t)/60000):0;
         var badge = t
-          ? '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300 text-sm font-medium"><i class="fas fa-check-circle"></i> Email Routing aktif · terakhir '+(ago<1?'baru saja':ago<60?ago+' menit lalu':ago<1440?Math.floor(ago/60)+' jam lalu':Math.floor(ago/1440)+' hari lalu')+'</div>'
-          : '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-300 text-sm font-medium"><i class="fas fa-exclamation-circle"></i> Belum terdeteksi · setup dulu di dashboard CF</div>';
+          ? '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium" style="background:#dcfce7;color:#166534"><i class="fas fa-check-circle"></i> Email Routing aktif · terakhir '+(ago<1?'baru saja':ago<60?ago+' menit lalu':ago<1440?Math.floor(ago/60)+' jam lalu':Math.floor(ago/1440)+' hari lalu')+'</div>'
+          : '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium" style="background:#fee2e2;color:#991b1b"><i class="fas fa-exclamation-circle"></i> Belum terdeteksi · setup dulu di dashboard CF</div>';
         return badge;
       })()+
-      '<div class="text-gray-600 dark:text-gray-400">Forward semua email tiap domain ke <b class="font-mono select-all bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">catchall@imapku.icu</b></div>'+
+      '<div class="text-gray-600 dark:text-gray-300">Forward semua email tiap domain ke <b class="font-mono select-all" style="background:rgba(148,163,184,.15);padding:2px 6px;border-radius:4px">catchall@imapku.icu</b></div>'+
     '</div>'+
     // === Panel IMAP ===
     '<div id="modeImap" style="display:'+(s.imap_host?'block':'none')+'" class="space-y-3">'+
@@ -371,11 +374,6 @@ async function vSettings(){
     field('Heading','Judul besar di tengah.',inp('h_head',s.hero_heading||''))+
     field('Subtitle','Kalimat di bawah judul.',inp('h_sub',s.hero_subtitle||''))+
     saveBtn('saveHero()'))+'</div>'+
-  '<div id="pagesCard" style="display:'+(s.theme==='blueprint'?'block':'none')+'">'+card('Halaman (FAQ / Privasi / Kontak)','Isi konten halaman untuk menu nav (tema Blueprint). Kosong = link tidak muncul.',
-    field('FAQ','',ta('p_faq',s.page_faq))+
-    field('Kebijakan Privasi','',ta('p_priv',s.page_privacy))+
-    field('Kontak','',ta('p_contact',s.page_contact))+
-    saveBtn('savePages()'))+'</div>'+
   card('Advance','API key & kunci halaman.',
     '<h4 class="text-sm font-semibold mb-1">API Keys</h4><p class="text-xs text-gray-400 mb-2">Untuk otomasi eksternal. <a href="/docs'+QS+'" target="_blank" class="text-indigo-600">Docs</a></p><div id="keyList" class="space-y-2 mb-3 max-w-lg"></div>'+
     '<div class="flex gap-2 mb-6 max-w-md"><input id="keyLabel" placeholder="label (mis. bot-signup)" class="flex-1 '+INP+'"/><button onclick="addKey()" class="bg-indigo-600 text-white px-4 rounded-lg">Buat</button></div>'+
@@ -399,9 +397,9 @@ function saveHero(){ put({hero_heading:$('#h_head').value,hero_subtitle:$('#h_su
 function savePages(){ put({page_faq:$('#p_faq').value,page_privacy:$('#p_priv').value,page_contact:$('#p_contact').value}); }
 function imapPayload(){ return {imap_host:$('#i_host').value,imap_port:+$('#i_port').value,imap_user:$('#i_user').value,imap_tls:$('#i_tls').checked?1:0,imap_pass:$('#i_pass').value}; }
 function setMailMode(m){ window.__mailMode=m; var w=$('#modeWorker'), i=$('#modeImap'); if(w) w.style.display = m==='worker'?'block':'none'; if(i) i.style.display = m==='imap'?'block':'none';
-  // Re-highlight card border
-  document.querySelectorAll('input[name=mail_mode]').forEach(function(r){ var lbl=r.closest('label'); if(!lbl) return; lbl.classList.toggle('border-indigo-500',r.checked); lbl.classList.toggle('bg-indigo-50',r.checked); lbl.classList.toggle('dark:bg-indigo-950/30',r.checked); lbl.classList.toggle('border-gray-200',!r.checked); lbl.classList.toggle('dark:border-gray-700',!r.checked); });
-  // Kalau pindah ke Email Routing, otomatis kosongin host IMAP di server (buyer nggak perlu ngapain lagi).
+  // Re-highlight card border via inline style
+  document.querySelectorAll('.mmOpt').forEach(function(lbl){ var on = lbl.dataset.mode===m; lbl.style.border = on ? '2px solid #6366f1' : '2px solid #e5e7eb'; lbl.style.background = on ? 'rgba(99,102,241,.08)' : 'transparent'; });
+  // Kalau pindah ke Email Routing, otomatis kosongin host IMAP di server.
   if(m==='worker' && window.__S && window.__S.imap_host){ put({imap_host:'',imap_user:''}).then(function(){ window.__S.imap_host=''; window.__S.imap_user=''; }); }
 }
 function imapResult(cls,html){ var r=$('#imapTestResult'); if(r){ r.className='text-sm mt-2 '+cls; r.innerHTML=html; } }

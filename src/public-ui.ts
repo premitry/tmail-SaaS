@@ -204,7 +204,7 @@ export function renderPublicPage(o: PublicOpts): string {
     <div class="bp-card px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
       ${brandHtml}
       <div class="flex items-center gap-5">
-        <nav class="bp-nav flex gap-5 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a>${o.hasFaq ? '<a href="/faq">FAQ</a>' : ""}${o.hasPrivacy ? '<a href="/privacy">PRIVACY</a>' : ""}${o.hasContact ? '<a href="/contact">CONTACT</a>' : ""}</nav>
+        <nav class="bp-nav flex gap-5 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a></nav>
         <div class="flex items-center gap-2 text-sm" style="color:${c.primary}">${statusEl}${socials}</div>
       </div>
     </div>
