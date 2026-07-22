@@ -1,292 +1,435 @@
-// Mail Hub: halaman di root apex (mis. imapku.icu) buat baca email catch-all
-// yang masuk ke domain apex. Layout meniru FAV·MAIL. Semua data di D1 (nol VPS/IMAP).
+// Mail Hub: halaman di root apex (mis. imapku.icu) buat baca email catch-all.
+// Tema: retro Windows 98 / Y2K — CSS & HTML struktur mengacu ke email-hub/webmail-custom/src/server.ts.
 import type { Env } from "./types";
 import { DB } from "./db";
 import { getSessionCtx, login, sessionCookie, clearCookie, isSecure } from "./auth";
 import { esc, head } from "./ui";
-import { verifyPassword } from "./crypto";
-import { TAILWIND_CSS } from "./tailwind-css";
 
+const html = (body: string, status = 200) =>
+  new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
-const html = (body: string) =>
-  new Response(body, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 
-async function body(req: Request): Promise<any> { try { return await req.json(); } catch { return {}; } }
+async function readForm(req: Request): Promise<Record<string, string>> {
+  const ct = req.headers.get("content-type") || "";
+  const out: Record<string, string> = {};
+  if (ct.includes("application/x-www-form-urlencoded")) {
+    const params = new URLSearchParams(await req.text());
+    for (const [k, v] of params) out[k] = v;
+  } else if (ct.includes("application/json")) {
+    try { Object.assign(out, await req.json()); } catch { /* ignore */ }
+  }
+  return out;
+}
+async function readFormMulti(req: Request): Promise<{ ids: string[]; [k: string]: unknown }> {
+  const params = new URLSearchParams(await req.text());
+  const ids = params.getAll("id");
+  const out: any = { ids };
+  for (const [k, v] of params) if (k !== "id") out[k] = v;
+  return out;
+}
+
+function fmtDate(ms: number): string {
+  const d = new Date(ms);
+  const n = new Date();
+  const p = (x: number) => ("0" + x).slice(-2);
+  const t = `${p(d.getHours())}.${p(d.getMinutes())}`;
+  if (d.toDateString() === n.toDateString()) return t;
+  const b = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+  return `${d.getDate()} ${b[d.getMonth()]}, ${t}`;
+}
+
+const STYLE = `
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:13px/1.45 Tahoma,"Segoe UI",Arial,sans-serif;color:#000;display:flex;flex-direction:column;background-color:#008080;background-image:linear-gradient(45deg,rgba(0,0,0,.10) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.10) 75%),linear-gradient(45deg,rgba(0,0,0,.10) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.10) 75%);background-size:28px 28px;background-position:0 0,14px 14px;background-attachment:fixed}
+a{color:#000080}
+a:hover{text-decoration:underline}
+.muted{color:#404040}
+.err{color:#a00000;font-weight:bold}
+b{font-weight:bold}
+code{background:#fff;color:#000080;padding:0 3px;border:1px solid #808080}
+.win{background:#c0c0c0;border:2px solid;border-color:#dfdfdf #808080 #808080 #dfdfdf;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000;display:flex;flex-direction:column;min-height:0}
+.titlebar,.modaltop{display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold;padding:3px 6px;font-size:13px;flex:0 0 auto}
+.win-body{padding:8px;overflow:auto;flex:1;min-height:0}
+.btn{font:inherit;background:#c0c0c0;color:#000;border:2px solid;border-color:#fff #808080 #808080 #fff;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #000;padding:3px 10px;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block}
+.btn:active{border-color:#808080 #fff #fff #808080;box-shadow:inset -1px -1px 0 #dfdfdf,inset 1px 1px 0 #000}
+.btn.danger{color:#800000;font-weight:bold}
+input,select,textarea{font:inherit;background:#fff;color:#000;border:2px solid;border-color:#808080 #fff #fff #808080;padding:3px 5px}
+.topbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#c0c0c0;border:2px solid;border-color:#dfdfdf #808080 #808080 #dfdfdf;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000;padding:4px 6px;margin:8px 8px 0}
+.brand{font-weight:bold;letter-spacing:2px;background:#000080;color:#fff;padding:2px 8px}
+.badge{background:#000080;color:#fff;padding:0 6px;font-weight:bold}
+#desktop{display:flex;gap:8px;padding:8px;flex:1;min-height:0}
+#desktop .left{flex:1 1 0;min-width:0}
+#desktop .right{flex:0 0 330px;width:330px}
+@media(max-width:840px){body{height:auto}#desktop{flex-direction:column}#desktop .right{flex:none;width:auto}}
+.list{background:#fff;border:2px solid;border-color:#808080 #fff #fff #808080;overflow:auto;flex:1;min-height:120px}
+.row{display:grid;grid-template-columns:16px 1fr auto;gap:8px;align-items:center;padding:5px 8px;border-bottom:1px solid #e2e2e2}
+.row:hover{background:#000080;color:#fff}
+.row:hover .muted,.row:hover a{color:#fff}
+.row a{color:inherit;text-decoration:none}
+.row .subj{font-weight:bold}
+.row.read .subj{font-weight:normal}
+.from{font-size:12px}.to{font-size:11px}
+.date{font-size:11px;white-space:nowrap}
+.bar{display:flex;gap:6px;align-items:center;padding:6px 2px;flex-wrap:wrap}
+.empty{text-align:center;padding:40px 12px;color:#404040}
+.searchform{margin:0;flex:1;min-width:120px}.searchform input{width:100%}
+.box{border:2px solid;border-color:#808080 #fff #fff #808080;background:#c0c0c0;margin-bottom:10px}
+.box>.bt{background:#000080;color:#fff;font-weight:bold;padding:2px 6px;font-size:12px}
+.box>.bd{padding:8px}
+.irow{display:grid;grid-template-columns:84px 1fr auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dotted #808080}
+.ival{background:#fff;border:1px solid #808080;padding:2px 4px;word-break:break-all}
+.dnsstat{font-size:11px;white-space:nowrap;font-weight:bold}
+.domlist{max-height:170px;overflow:auto;background:#fff;border:1px solid #808080;padding:2px}
+.drow{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:3px 4px;border-bottom:1px dotted #c8c8c8}
+.drow .dnm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drow .da{display:flex;gap:3px;flex:0 0 auto}
+.drow .btn{padding:1px 6px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,40,.4);z-index:50;align-items:flex-start;justify-content:center;padding:24px;overflow:auto}
+.modalcard{background:#c0c0c0;border:2px solid;border-color:#dfdfdf #808080 #808080 #dfdfdf;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000,4px 4px 10px rgba(0,0,0,.5);max-width:820px;width:100%;max-height:90vh;overflow:auto}
+.modaltop{position:sticky;top:0}
+.msghead{background:#fff;padding:8px;border-bottom:2px solid #808080}
+.msghead .subj{font-size:15px;font-weight:bold;margin:0 0 4px}
+iframe{width:100%;min-height:60vh;border:0;background:#fff}
+pre.body{white-space:pre-wrap;word-wrap:break-word;padding:10px;margin:0;background:#fff}
+.login{max-width:300px;margin:14vh auto;width:90%}
+.login .win-body{padding:14px}
+.login input{width:100%;margin:8px 0}
+`;
+
+function shell(title: string, inner: string): string {
+  return `<!doctype html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(title)}</title><link rel="icon" href="/favicon.svg"><style>${STYLE}</style></head><body>${inner}</body></html>`;
+}
+
+function loginPage(env: Env, err = ""): string {
+  const zone = env.SAAS_ZONE || "imapku.icu";
+  return shell(`FAV·MAIL — ${zone}`, `<div class="login"><div class="win">
+    <div class="titlebar">🔒 FAV·MAIL — Login</div>
+    <form class="win-body" method="post" action="/login">
+      ${err ? `<p class="err">${esc(err)}</p>` : ""}
+      <div style="margin-bottom:4px">Login owner untuk <b>${esc(zone)}</b>:</div>
+      <input type="text" name="email" placeholder="username / email" autofocus autocomplete="username">
+      <input type="password" name="password" placeholder="password" autocomplete="current-password">
+      <button class="btn" type="submit" style="width:100%;margin-top:8px">Masuk »</button>
+    </form>
+  </div></div>`);
+}
 
 export async function handleMailHub(req: Request, url: URL, env: Env, db: DB): Promise<Response> {
   const path = url.pathname;
   const secure = isSecure(url);
 
-  if (path === "/assets/app.css") {
-    return new Response(TAILWIND_CSS, { headers: { "content-type": "text/css; charset=utf-8", "cache-control": "public, max-age=86400" } });
-  }
   if (path === "/favicon.svg" || path === "/favicon.ico") {
     return new Response(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📬</text></svg>`,
       { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
   }
 
+  // LOGIN
   if (path === "/login" && req.method === "POST") {
-    const b = await body(req);
-    const r = await login(db, String(b.email || ""), String(b.password || ""));
-    if (!r.ok) return json({ ok: false, error: r.error || "login gagal" }, 401);
-    const user = await db.getUserByEmailOrUsername(String(b.email));
-    if (!user || user.role !== "owner") return json({ ok: false, error: "hanya owner yang boleh akses Mail Hub" }, 403);
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { "content-type": "application/json", "set-cookie": sessionCookie(r.sessionId!, secure) },
-    });
+    const f = await readForm(req);
+    const r = await login(db, String(f.email || ""), String(f.password || ""));
+    if (!r.ok) return html(loginPage(env, r.error || "gagal login"), 401);
+    const user = await db.getUserByEmailOrUsername(String(f.email));
+    if (!user || user.role !== "owner") return html(loginPage(env, "hanya owner yang boleh akses"), 403);
+    return new Response("", { status: 302, headers: { "location": "/", "set-cookie": sessionCookie(r.sessionId!, secure) } });
   }
   if (path === "/logout") {
-    return new Response("bye", { status: 302, headers: { "location": "/", "set-cookie": clearCookie(secure) } });
+    return new Response("", { status: 302, headers: { "location": "/", "set-cookie": clearCookie(secure) } });
   }
 
   const s = await getSessionCtx(req, db);
   const authed = !!(s && s.user.role === "owner");
-
   if (!authed) {
-    if (path === "/") return html(renderLogin(env));
-    return json({ error: "unauthorized" }, 401);
+    if (path === "/") return html(loginPage(env));
+    return new Response("Unauthorized", { status: 401 });
   }
 
-  if (path === "/api/inbox" && req.method === "GET") {
-    const q = url.searchParams.get("q") || "";
-    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
-    const limit = 20;
-    const { rows, total } = await db.listHubMessages(q, limit, (page - 1) * limit);
-    const nnew = await db.countHubNew();
-    return json({ messages: rows, total, page, pages: Math.max(1, Math.ceil(total / limit)), unread: nnew });
-  }
-  if (path === "/api/msg" && req.method === "GET") {
-    const id = url.searchParams.get("id") || "";
+  // ── Endpoints (form-post friendly, sesuai gaya referensi) ──
+
+  // Detail email → fragment (buat modal) atau halaman penuh.
+  const mMatch = path.match(/^\/m\/([a-zA-Z0-9-]+)$/);
+  if (mMatch && req.method === "GET") {
+    const id = mMatch[1];
     const m = await db.getHubMessage(id);
-    if (m) await db.markHubSeen(id).catch(() => {});
-    return m ? json(m) : json({ error: "tidak ditemukan" }, 404);
+    if (!m) return new Response("Not found", { status: 404 });
+    await db.markHubSeen(id).catch(() => {});
+    const frag = url.searchParams.get("frag") === "1";
+    return html(frag ? messageFragment(id, m) : messagePage(id, m));
   }
-  if (path === "/api/delete" && req.method === "POST") {
-    const b = await body(req);
-    const ids = Array.isArray(b.ids) ? b.ids : (b.id ? [b.id] : []);
-    for (const id of ids) await db.deleteHubMessage(String(id));
-    return json({ ok: true, deleted: ids.length });
-  }
-  if (path === "/api/domains" && req.method === "GET") {
-    // Domain apex + semua domain buyer aktif (info).
-    const apex = env.SAAS_ZONE || "imapku.icu";
-    const list: { name: string; source: string }[] = [{ name: apex, source: "apex" }];
-    const r = await (db as any).d1.prepare(`SELECT d.domain, u.name FROM domains d JOIN users u ON u.id=d.buyer_id WHERE d.is_active=1 ORDER BY d.created_at DESC`).all();
-    for (const row of r.results || []) list.push({ name: (row as any).domain, source: (row as any).name || "buyer" });
-    return json({ domains: list });
-  }
-  if (path === "/api/settings" && req.method === "GET") {
-    return json({
-      retention_days: parseInt(await db.platformGet("hub_retention_days", "7"), 10),
-      max_stored: parseInt(await db.platformGet("hub_max_stored", "500"), 10),
-      brand: await db.platformGet("hub_brand", "MAIL HUB"),
-      apex: env.SAAS_ZONE || "",
-    });
-  }
-  if (path === "/api/settings" && req.method === "POST") {
-    const b = await body(req);
-    if (b.retention_days !== undefined) {
-      const n = parseInt(String(b.retention_days), 10);
-      if (isNaN(n) || n < 0 || n > 365) return json({ error: "retention_days 0-365" }, 400);
-      await db.platformSet("hub_retention_days", String(n));
-      if (n > 0) await db.gcHubMessages(n);
-    }
-    if (b.max_stored !== undefined) {
-      const n = parseInt(String(b.max_stored), 10);
-      if (isNaN(n) || n < 0 || n > 100000) return json({ error: "max_stored 0-100000" }, 400);
-      await db.platformSet("hub_max_stored", String(n));
-      if (n > 0) await db.trimHubMessages(n);
-    }
-    if (b.brand !== undefined) await db.platformSet("hub_brand", String(b.brand).slice(0, 40));
-    return json({ ok: true });
-  }
-  if (path === "/api/password" && req.method === "POST") {
-    const b = await body(req);
-    const oldPw = String(b.old_password || "");
-    const newPw = String(b.new_password || "");
-    if (newPw.length < 6) return json({ ok: false, error: "password baru minimal 6 karakter" }, 400);
-    const owner = s!.user;
-    if (!(await verifyPassword(oldPw, owner.pass_hash))) return json({ ok: false, error: "password lama salah" }, 401);
-    await db.setPassword(owner.id, newPw);
-    return json({ ok: true });
+  const mDel = path.match(/^\/m\/([a-zA-Z0-9-]+)\/delete$/);
+  if (mDel && req.method === "POST") {
+    await db.deleteHubMessage(mDel[1]);
+    return new Response("", { status: 302, headers: { "location": "/" } });
   }
 
-  if (path === "/") return html(await renderHub(env, db));
+  // Bulk delete.
+  if (path === "/delete" && req.method === "POST") {
+    const f = await readFormMulti(req);
+    for (const id of f.ids) await db.deleteHubMessage(String(id));
+    return new Response("", { status: 302, headers: { "location": "/" } });
+  }
+
+  // Retention.
+  if (path === "/settings/retention" && req.method === "POST") {
+    const f = await readForm(req);
+    const days = parseInt(String(f.days || "0"), 10);
+    const max = parseInt(String(f.max || "0"), 10);
+    if (!isNaN(days) && days >= 0 && days <= 365) {
+      await db.platformSet("hub_retention_days", String(days));
+      if (days > 0) await db.gcHubMessages(days);
+    }
+    if (!isNaN(max) && max >= 0 && max <= 100000) {
+      await db.platformSet("hub_max_stored", String(max));
+      if (max > 0) await db.trimHubMessages(max);
+    }
+    return new Response("", { status: 302, headers: { "location": "/?ok=Aturan+tersimpan" } });
+  }
+
+  // Ganti password owner (session valid → langsung set).
+  if (path === "/settings/change-webmail-pw" && req.method === "POST") {
+    const f = await readForm(req);
+    const pw = String(f.password || "");
+    if (pw.length < 6) return new Response("", { status: 302, headers: { "location": "/?err=password+min+6" } });
+    await db.setPassword(s!.user.id, pw);
+    return new Response("", { status: 302, headers: { "location": "/logout" } });
+  }
+
+  // Polling ringan buat auto-refresh (referensi: /count).
+  if (path === "/count") {
+    const total = await db.countHubTotal();
+    return json({ total });
+  }
+
+  // Halaman utama.
+  if (path === "/") return html(await renderInbox(env, db, url));
 
   return new Response("Not found", { status: 404 });
 }
 
-function renderLogin(env: Env): string {
-  const brand = env.BRAND_NAME || "Mail Hub";
+async function renderInbox(env: Env, db: DB, url: URL): Promise<string> {
+  const pageSize = 20;
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const q = url.searchParams.get("q") || "";
+  const err = url.searchParams.get("err") || "";
+  const ok = url.searchParams.get("ok") || "";
   const zone = env.SAAS_ZONE || "imapku.icu";
-  return `${head(`${brand} — Login`, "", "/favicon.svg", false)}
-<body class="min-h-screen flex items-center justify-center" style="background:#1e3a8a;background-image:linear-gradient(135deg,#1e3a8a 0%,#312e81 100%)">
-  <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm">
-    <div class="text-center mb-6">
-      <div class="inline-flex items-center gap-2 px-3 py-1 text-white font-bold text-sm rounded" style="background:#1e3a8a">
-        <i class="fas fa-envelope"></i> MAIL HUB
-      </div>
-      <h1 class="mt-3 text-lg font-semibold text-gray-800">${esc(zone)}</h1>
-      <p class="text-xs text-gray-500 mt-1">Catch-all inbox untuk domain apex.</p>
-    </div>
-    <form id="loginForm" class="space-y-3">
-      <input id="email" type="text" placeholder="username / email owner" class="w-full py-2.5 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" autocomplete="username"/>
-      <input id="password" type="password" placeholder="password" class="w-full py-2.5 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" autocomplete="current-password"/>
-      <button type="submit" class="w-full py-2.5 rounded-lg text-white font-semibold" style="background:#1e3a8a">Masuk</button>
-      <div id="err" class="text-sm text-red-600 text-center min-h-[1.25rem]"></div>
-    </form>
-  </div>
-<script>
-document.getElementById('loginForm').onsubmit=async(e)=>{e.preventDefault();
-  const email=document.getElementById('email').value.trim();
-  const password=document.getElementById('password').value;
-  const errEl=document.getElementById('err'); errEl.textContent='';
-  const r=await fetch('/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password})});
-  const j=await r.json().catch(()=>({}));
-  if(j.ok){ location.href='/'; } else { errEl.textContent=j.error||'gagal login'; setTimeout(()=>errEl.textContent='',3500); }
-};
-</script>
-</body></html>`;
-}
-
-async function renderHub(env: Env, db: DB): Promise<string> {
-  const brand = await db.platformGet("hub_brand", "MAIL HUB");
-  const zone = env.SAAS_ZONE || "imapku.icu";
-  const retention = parseInt(await db.platformGet("hub_retention_days", "7"), 10);
+  const { rows, total } = await db.listHubMessages(q, pageSize, (page - 1) * pageSize);
+  const unread = await db.countHubNew();
+  const retDays = parseInt(await db.platformGet("hub_retention_days", "7"), 10);
   const maxStored = parseInt(await db.platformGet("hub_max_stored", "500"), 10);
-  const style = `
-    body{background:#e5e7eb}
-    .hb-hdr{background:linear-gradient(180deg,#1e2f5a,#0f1e3f);color:#fff;border-bottom:1px solid #0a1530}
-    .hb-hdr .brand{background:#1e3a8a;color:#fff;padding:6px 10px;font-weight:800;letter-spacing:.05em;font-size:13px;border:1px solid #0a1530}
-    .hb-hdr input{background:#fff;color:#1f2937}
-    .hb-btn{background:#fff;border:1px solid #94a3b8;color:#1f2937;padding:5px 10px;border-radius:2px;font-size:13px}
-    .hb-btn:hover{background:#f1f5f9}
-    .hb-card{background:#fff;border:1px solid #94a3b8}
-    .hb-card-hdr{background:linear-gradient(180deg,#2b4380,#1e3a8a);color:#fff;font-weight:700;padding:6px 12px;font-size:13px;letter-spacing:.03em;display:flex;align-items:center;justify-content:space-between}
-    .hb-side-hdr{background:linear-gradient(180deg,#3f5a9c,#2b4380);color:#fff;font-weight:700;padding:6px 10px;font-size:12px}
-    .hb-row{padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#fff}
-    .hb-row:hover{background:#f8fafc}
-    .hb-row.unread{background:#fff}
-    .hb-btn-danger{background:#fee2e2;border:1px solid #ef9a9a;color:#991b1b;padding:4px 10px;border-radius:2px;font-size:12px;font-weight:600}
-    .hb-btn-primary{background:#1e3a8a;color:#fff;padding:6px 12px;border-radius:2px;font-size:12px;border:0;cursor:pointer;font-weight:600}
-    .hb-input{width:100%;border:1px solid #94a3b8;padding:4px 8px;font-size:13px;background:#fff}
-    .hb-select{width:100%;border:1px solid #94a3b8;padding:4px 8px;font-size:13px;background:#fff}
-    .hb-dtag{display:inline-block;background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:1px 5px;margin-left:6px;border-radius:2px}
-  `;
-  return `${head(`${brand} — ${zone}`, `<style>${style}</style>`, "/favicon.svg", false)}
-<body class="min-h-screen text-gray-800">
-  <header class="hb-hdr flex items-center gap-3 px-3 h-11">
-    <div class="brand"><i class="far fa-envelope mr-1"></i> ${esc(brand).toUpperCase()}</div>
-    <div class="relative flex-1 max-w-2xl"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-      <input id="q" placeholder="Cari email..." class="w-full pl-9 pr-3 py-1.5 rounded text-sm focus:outline-none"/></div>
-    <div class="flex items-center gap-2 ml-auto">
-      <button onclick="loadInbox()" class="hb-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
-      <a href="/logout" class="hb-btn"><u>K</u>eluar</a>
-    </div>
-  </header>
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const qp = q ? `&q=${encodeURIComponent(q)}` : "";
 
-  <main class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-3 p-3 max-w-[1400px] mx-auto">
-    <section class="hb-card">
-      <div class="hb-card-hdr"><span><i class="fas fa-inbox mr-1"></i>INBOX</span><span id="counter" class="font-normal opacity-90">0 email</span></div>
-      <div class="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-gray-300 bg-gray-100 text-sm">
-        <label class="inline-flex items-center gap-1.5 border border-gray-400 bg-white px-2 py-1 rounded-sm cursor-pointer"><input type="checkbox" id="pickAll" onchange="pickAll(this.checked)"/>Pilih semua</label>
-        <button onclick="bulkDelete()" class="hb-btn-danger"><i class="fas fa-trash mr-1"></i>Hapus dipilih</button>
-        <span id="pageInfo" class="ml-auto text-xs text-gray-600 font-mono"></span>
-        <div class="flex gap-1"><button id="prev" onclick="go(-1)" class="hb-btn w-7 h-7 disabled:opacity-30 flex items-center justify-center"><i class="fas fa-chevron-left text-xs"></i></button><button id="next" onclick="go(1)" class="hb-btn w-7 h-7 disabled:opacity-30 flex items-center justify-center"><i class="fas fa-chevron-right text-xs"></i></button></div>
+  // Domains: apex + buyer domains aktif.
+  const domRes = await (db as any).d1.prepare(`SELECT domain FROM domains WHERE is_active=1 ORDER BY created_at DESC`).all();
+  const buyerDomains: string[] = (domRes.results || []).map((r: any) => r.domain);
+  const allDomains = [zone, ...buyerDomains];
+
+  const rowsHtml = rows.map((r: any) => `
+    <label class="row ${r.seen ? "read" : "unread"}">
+      <input type="checkbox" name="id" value="${esc(r.id)}">
+      <a class="cell" data-mail href="/m/${esc(r.id)}" style="display:grid;gap:1px;min-width:0">
+        <span class="from muted">${esc(r.from_addr) || "(tanpa pengirim)"}</span>
+        <span class="subj">${esc(r.subject || "(tanpa subjek)")}</span>
+        <span class="to muted">ke: ${esc(r.to_addr) || "-"}</span>
+      </a>
+      <span class="date">${esc(fmtDate(r.received_at))}</span>
+    </label>`).join("");
+
+  const nav = pages > 1 ? `
+      ${page > 1 ? `<a class="btn" href="/?page=${page - 1}${qp}">‹</a>` : ""}
+      <span class="muted">${page}/${pages}</span>
+      ${page < pages ? `<a class="btn" href="/?page=${page + 1}${qp}">›</a>` : ""}` : "";
+
+  const infoText = q ? `${total} hasil "${esc(q)}"` : `${total} email · ${unread} baru`;
+  const listInner = total === 0
+    ? `<div class="empty">${q ? "🔍 Tidak ada email cocok." : "📭 Belum ada email. Kirim ke <b>*@" + esc(zone) + "</b>."}</div>`
+    : rowsHtml;
+
+  const search = `<form method="get" action="/" class="searchform"><input name="q" value="${esc(q)}" placeholder="🔍 Cari email…" autocomplete="off"></form>`;
+
+  const buildOpts = (presets: [number, string][], cur: number) => {
+    let o = presets.map(([v, l]) => `<option value="${v}"${v === cur ? " selected" : ""}>${esc(l)}</option>`).join("");
+    if (!presets.some(([v]) => v === cur)) o = `<option value="${cur}" selected>${cur} (custom)</option>` + o;
+    return o;
+  };
+  const maxOptions = buildOpts([[0, "Semua"], [100, "100 terbaru"], [500, "500 terbaru"], [1000, "1000 terbaru"], [2000, "2000 terbaru"]], maxStored);
+  const dayOptions = buildOpts([[0, "Jangan"], [3, "3 hari"], [7, "7 hari"], [14, "14 hari"], [30, "30 hari"], [90, "90 hari"]], retDays);
+
+  const drows = allDomains.length
+    ? allDomains.map((d) => `
+      <div class="drow">
+        <span class="dnm"><b>${esc(d)}</b> <span class="dnsstat" style="color:#000080">[OK-CF]</span></span>
+        <span class="da">
+          ${d === zone ? "" : `<a class="btn" href="https://panel.imapku.icu/#domains" target="_blank" title="Kelola di panel admin">⚙</a>`}
+        </span>
+      </div>`).join("")
+    : `<div class="muted" style="padding:6px 2px">Belum ada domain.</div>`;
+
+  const inboxScript = `<script>
+    function openModal(url){
+      fetch(url + (url.includes('?')?'&':'?') + 'frag=1')
+        .then(function(r){return r.text();})
+        .then(function(html){
+          document.getElementById('modalcard').innerHTML = html;
+          document.getElementById('modal').style.display = 'flex';
+        });
+    }
+    function closeModal(){ document.getElementById('modal').style.display='none'; location.reload(); }
+    function toggleAll(btn){
+      var boxes = document.querySelectorAll('.list input[name="id"]');
+      var anyUnchecked = false;
+      boxes.forEach(function(b){ if(!b.checked) anyUnchecked = true; });
+      boxes.forEach(function(b){ b.checked = anyUnchecked; });
+      btn.textContent = anyUnchecked ? '☐ Batal pilih' : '☑ Pilih semua';
+    }
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+    document.querySelectorAll('a[data-mail]').forEach(function(a){
+      a.addEventListener('click', function(e){ e.preventDefault(); openModal(a.getAttribute('href')); });
+    });
+    function showImap(){ document.getElementById('imapinfo').style.display='flex'; }
+    function hideImap(){ document.getElementById('imapinfo').style.display='none'; }
+    function cp(btn){ var v=btn.parentNode.querySelector('.ival').textContent; navigator.clipboard.writeText(v);
+      var t=btn.textContent; btn.textContent='ok!'; setTimeout(function(){btn.textContent=t;},1000); }
+    var lastTotal = ${total};
+    setInterval(function(){
+      var modalOpen = document.getElementById('modal').style.display === 'flex';
+      if (modalOpen || location.search.indexOf('q=') >= 0) return;
+      fetch('/count').then(function(r){ return r.json(); }).then(function(j){
+        if (j && j.total > lastTotal) location.reload();
+      }).catch(function(){});
+    }, 12000);
+  </script>`;
+
+  const body = `
+    <form method="post" action="/delete" style="display:flex;flex-direction:column;gap:6px;flex:1;min-height:0">
+      <div class="bar">
+        <button class="btn" type="button" onclick="toggleAll(this)">☑ Pilih semua</button>
+        <button class="btn danger" type="submit" onclick="return confirm('Hapus email yang dicentang?')">🗑 Hapus dipilih</button>
+        ${q ? `<a class="btn" href="/">✕ reset</a>` : ""}
+        <span style="flex:1"></span>${nav}
       </div>
-      <div id="list" style="min-height:400px"></div>
-    </section>
+      <div class="list">${listInner}</div>
+    </form>`;
 
-    <aside class="space-y-3">
-      <div class="hb-card">
-        <div class="hb-card-hdr"><span><i class="fas fa-cog mr-1"></i>PENGATURAN DOMAIN</span></div>
-        <div class="hb-side-hdr">📁 DOMAIN</div>
-        <div class="p-3 text-sm space-y-2">
-          <div class="text-xs text-gray-600">Semua email → catchall <b class="font-mono">${esc(zone)}</b></div>
-          <div id="domList" class="space-y-1"></div>
-        </div>
-        <div class="hb-side-hdr">🗑 AUTO-HAPUS</div>
-        <div class="p-3 text-sm space-y-3">
-          <div>
-            <label class="text-xs text-gray-600">📄 Simpan maks:</label>
-            <select id="maxStored" class="hb-select mt-1">
-              ${[100,300,500,1000,3000,0].map(v=>`<option value="${v}"${v===maxStored?' selected':''}>${v===0?'Tak terbatas':(v+' terbaru')}</option>`).join("")}
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-600">⏳ Hapus setelah:</label>
-            <select id="retention" class="hb-select mt-1">
-              ${[[0,'Selamanya'],[1,'1 hari'],[3,'3 hari'],[7,'7 hari'],[14,'14 hari'],[30,'30 hari'],[90,'90 hari']].map(([v,t])=>`<option value="${v}"${v===retention?' selected':''}>${t}</option>`).join("")}
-            </select>
-          </div>
-          <button onclick="saveRules()" class="hb-btn-primary w-full py-1.5">Simpan aturan</button>
-          <p id="ruleMsg" class="text-xs text-green-600 hidden">✓ Tersimpan</p>
-        </div>
-        <div class="hb-side-hdr">🔑 PASSWORD OWNER</div>
-        <div class="p-3 text-sm space-y-2">
-          <input id="oldPw" type="password" placeholder="password lama" class="hb-input"/>
-          <input id="newPw" type="password" placeholder="password baru (min 6)" class="hb-input"/>
-          <button onclick="changePw()" class="hb-btn-primary w-full py-1.5">Ganti password</button>
-          <p id="pwMsg" class="text-xs hidden"></p>
+  const panelRight = `
+    ${err ? `<div class="box"><div class="bd err">${esc(err)}</div></div>` : ""}
+    ${ok ? `<div class="box"><div class="bd" style="color:#000080;font-weight:bold">✔ ${esc(ok)}</div></div>` : ""}
+    <div class="box">
+      <div class="bt">📁 DOMAIN</div>
+      <div class="bd">
+        <div class="muted" style="font-size:11px;margin-bottom:6px">Semua email → <b>catchall@${esc(zone)}</b></div>
+        <div class="domlist">${drows}</div>
+        <button class="btn" type="button" onclick="showImap()" style="width:100%;margin-top:8px">ⓘ Info Setup Domain</button>
+      </div>
+    </div>
+    <div class="box">
+      <div class="bt">🗑 AUTO-HAPUS</div>
+      <div class="bd">
+        <form method="post" action="/settings/retention">
+          <div style="margin-bottom:6px">📦 Simpan maks:<br><select name="max" style="width:100%">${maxOptions}</select></div>
+          <div style="margin-bottom:6px">⏳ Hapus setelah:<br><select name="days" style="width:100%">${dayOptions}</select></div>
+          <button class="btn" type="submit" style="width:100%">Simpan aturan</button>
+        </form>
+      </div>
+    </div>
+    <div class="box">
+      <div class="bt">🔑 PASSWORD WEBMAIL</div>
+      <div class="bd">
+        <form method="post" action="/settings/change-webmail-pw" onsubmit="return confirm('Ganti password? Login ulang ya.')">
+          <input name="password" type="password" placeholder="password baru (min 6)" autocomplete="new-password" style="width:100%;margin-bottom:6px">
+          <button class="btn" type="submit" style="width:100%">Ganti &amp; login ulang</button>
+        </form>
+      </div>
+    </div>`;
+
+  const imapModal = `
+    <div id="imapinfo" class="modal" onclick="if(event.target===this)hideImap()">
+      <div class="modalcard" style="max-width:520px">
+        <div class="modaltop">ⓘ Setup Domain<span style="flex:1"></span><button class="btn" type="button" onclick="hideImap()">✕</button></div>
+        <div style="padding:10px">
+          <p class="muted" style="margin-top:0">Domain buyer di-manage lewat panel admin. Semua email lewat catch-all Cloudflare Email Routing.</p>
+          <div class="irow"><span class="muted">Catchall</span><span class="ival">catchall@${esc(zone)}</span><button class="btn" type="button" onclick="cp(this)">salin</button></div>
+          <div class="irow"><span class="muted">Panel Admin</span><span class="ival">https://panel.${esc(zone)}</span><button class="btn" type="button" onclick="cp(this)">salin</button></div>
+          <p class="muted" style="font-size:11px;margin-top:10px;margin-bottom:0">Tambah / kelola domain buyer di <a href="https://panel.${esc(zone)}" target="_blank">panel admin</a>.</p>
         </div>
       </div>
-    </aside>
-  </main>
+    </div>`;
 
-  <div id="modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
-    <div class="bg-white rounded max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative">
-      <button onclick="closeModal()" class="absolute top-2 right-3 text-2xl text-gray-500 hover:text-gray-800">&times;</button>
-      <div id="modalBody" class="p-5"></div>
+  return shell(`FAV·MAIL — ${zone}`, `
+    <div class="topbar">
+      <span class="brand">✉ FAV·MAIL</span>
+      ${unread ? `<span class="badge">${unread} baru</span>` : ""}
+      ${search}
+      <span style="flex:1"></span>
+      <a class="btn" href="/">↻</a>
+      <a class="btn" href="/logout">Keluar</a>
     </div>
-  </div>
+    <div id="desktop">
+      <div class="win left">
+        <div class="titlebar">📥 INBOX<span style="flex:1"></span><span style="font-weight:normal">${infoText}</span></div>
+        <div class="win-body" style="display:flex;flex-direction:column">${body}</div>
+      </div>
+      <div class="win right">
+        <div class="titlebar">⚙ PENGATURAN DOMAIN</div>
+        <div class="win-body">${panelRight}</div>
+      </div>
+    </div>
+    <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="modalcard" id="modalcard"></div></div>
+    ${imapModal}
+    ${inboxScript}`);
+}
 
-<script>
-var state={page:1,q:'',rows:[],sel:new Set()};
-function esc(s){return String(s??'').replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-function fmt(ms){var d=new Date(ms),n=new Date();function p(x){return('0'+x).slice(-2);}var t=p(d.getHours())+'.'+p(d.getMinutes());var b=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];return d.toDateString()===n.toDateString()?t:(d.getDate()+' '+b[d.getMonth()]+', '+t);}
-function fmtSender(f){var m=String(f||'').match(/^\\s*"?([^"<]+?)"?\\s*<([^>]+)>\\s*$/);if(m)return '"'+esc(m[1].trim())+'" &lt;'+esc(m[2].trim())+'&gt;';return esc(f||'');}
-async function loadInbox(){
-  var r=await fetch('/api/inbox?page='+state.page+'&q='+encodeURIComponent(state.q));
-  var d=await r.json();state.rows=d.messages||[];
-  document.getElementById('counter').innerHTML=(d.total||0)+' email'+(d.unread?' · '+d.unread+' baru':'');
-  var list=document.getElementById('list');
-  list.innerHTML=state.rows.length?state.rows.map(function(m){return '<div class="hb-row flex items-start gap-3">'+
-    '<input type="checkbox" data-id="'+m.id+'" onchange="pick(this)" class="mt-1"/>'+
-    '<div class="flex-1 min-w-0 cursor-pointer" onclick="openMsg(\\''+m.id+'\\')">'+
-      '<div class="flex justify-between gap-3 text-sm text-gray-700"><div class="truncate '+(m.seen?'':'font-semibold')+'">'+fmtSender(m.from_addr)+'</div><div class="text-xs text-gray-500 whitespace-nowrap font-mono">'+fmt(m.received_at)+'</div></div>'+
-      '<div class="text-[14px] truncate '+(m.seen?'':'font-bold')+' text-gray-800">'+esc(m.subject||'(tanpa subjek)')+'</div>'+
-      '<div class="text-xs text-gray-500 truncate">ke: '+esc(m.to_addr)+'</div>'+
-    '</div></div>';}).join(''):'<div class="p-12 text-center text-gray-400">Belum ada email masuk. Kirim ke <b>*@'+'${esc(zone)}'+'</b>.</div>';
-  var p=d.page||1,pp=d.pages||1;
-  document.getElementById('pageInfo').textContent=p+'/'+pp;
-  document.getElementById('prev').disabled=p<=1;document.getElementById('next').disabled=p>=pp;
-  document.getElementById('pickAll').checked=false;state.sel.clear();
+function linkify(s: string): string {
+  const escaped = esc(s);
+  return escaped.replace(/(https?:\/\/[^\s"'<>]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 }
-async function loadDomains(){
-  var r=await fetch('/api/domains');var d=await r.json();
-  document.getElementById('domList').innerHTML=(d.domains||[]).map(function(x){return '<div class="border border-gray-300 bg-white px-2 py-1 flex justify-between items-center text-xs"><span class="font-mono">'+esc(x.name)+'</span><span class="hb-dtag">'+(x.source==='apex'?'APEX':'BUYER')+'</span></div>';}).join('');
+
+function messageInner(m: any): string {
+  const subject = m.subject || "(tanpa subjek)";
+  const from = m.from_addr || "";
+  const to = m.to_addr || "";
+  const date = m.received_at ? fmtDate(m.received_at) : "";
+  let bodyHtml: string;
+  if (typeof m.html === "string" && m.html.trim()) {
+    const safe = '<base target="_blank">' + m.html;
+    bodyHtml = `<iframe sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(safe)}"></iframe>`;
+  } else {
+    bodyHtml = `<pre class="body">${linkify(m.text || "(kosong)")}</pre>`;
+  }
+  return `
+    <div class="msghead">
+      <p class="subj">${esc(subject)}</p>
+      <div class="muted">Dari: ${esc(from) || "-"}</div>
+      <div class="muted">Ke: ${esc(to) || "-"}</div>
+      <div class="muted">${esc(date)}</div>
+    </div>
+    ${bodyHtml}`;
 }
-function pick(cb){if(cb.checked)state.sel.add(cb.dataset.id);else state.sel.delete(cb.dataset.id);}
-function pickAll(on){document.querySelectorAll('#list input[type=checkbox][data-id]').forEach(function(cb){cb.checked=on;if(on)state.sel.add(cb.dataset.id);else state.sel.delete(cb.dataset.id);});}
-async function bulkDelete(){var ids=[...state.sel];if(!ids.length){alert('Pilih email dulu.');return;}if(!confirm('Hapus '+ids.length+' email?'))return;await fetch('/api/delete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ids:ids})});state.sel.clear();loadInbox();}
-async function openMsg(id){
-  var r=await fetch('/api/msg?id='+id);var m=await r.json();if(m.error){alert(m.error);return;}
-  var body=m.html?m.html:'<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px;margin:0">'+esc(m.text||'')+'</pre>';
-  document.getElementById('modalBody').innerHTML='<h2 class="text-lg font-bold pr-8 mb-3">'+esc(m.subject||'(tanpa subjek)')+'</h2>'+
-    '<div class="text-xs text-gray-600 mb-3 pb-3 border-b border-gray-200"><div><b>Dari:</b> '+esc(m.from_addr)+'</div><div><b>Ke:</b> '+esc(m.to_addr)+'</div><div><b>Tanggal:</b> '+esc(new Date(m.received_at).toLocaleString())+'</div></div>'+
-    '<iframe sandbox="allow-same-origin" srcdoc="'+esc(body)+'" class="w-full h-[60vh] bg-white border border-gray-200 rounded"></iframe>'+
-    '<div class="flex justify-end mt-3 gap-2"><button onclick="delOne(\\''+id+'\\')" class="hb-btn-danger"><i class="fas fa-trash mr-1"></i>Hapus</button></div>';
-  document.getElementById('modal').classList.remove('hidden');document.getElementById('modal').classList.add('flex');
+
+function messageFragment(id: string, m: any): string {
+  return `
+    <div class="modaltop">
+      <button class="btn" type="button" onclick="closeModal()">✕ Tutup</button>
+      <span style="flex:1"></span>
+      <form method="post" action="/m/${esc(id)}/delete" onsubmit="return confirm('Hapus email ini?')">
+        <button class="btn danger" type="submit">🗑 Hapus</button>
+      </form>
+    </div>
+    ${messageInner(m)}`;
 }
-function closeModal(){var m=document.getElementById('modal');m.classList.add('hidden');m.classList.remove('flex');}
-async function delOne(id){await fetch('/api/delete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:id})});closeModal();loadInbox();}
-function go(d){state.page=Math.max(1,state.page+d);loadInbox();}
-async function saveRules(){var r=parseInt(document.getElementById('retention').value,10);var m=parseInt(document.getElementById('maxStored').value,10);await fetch('/api/settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({retention_days:r,max_stored:m})});var el=document.getElementById('ruleMsg');el.classList.remove('hidden');setTimeout(function(){el.classList.add('hidden');},1500);loadInbox();}
-async function changePw(){var op=document.getElementById('oldPw').value;var np=document.getElementById('newPw').value;var msg=document.getElementById('pwMsg');msg.classList.remove('hidden');var r=await fetch('/api/password',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({old_password:op,new_password:np})});var j=await r.json().catch(function(){return{};});if(j.ok){msg.textContent='✓ Password diganti';msg.className='text-xs text-green-600';document.getElementById('oldPw').value='';document.getElementById('newPw').value='';}else{msg.textContent='✗ '+(j.error||'gagal');msg.className='text-xs text-red-600';}setTimeout(function(){msg.classList.add('hidden');},3000);}
-var qT;document.getElementById('q').oninput=function(e){clearTimeout(qT);qT=setTimeout(function(){state.q=e.target.value;state.page=1;loadInbox();},300);};
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
-loadInbox();loadDomains();setInterval(loadInbox,15000);
-</script>
-</body></html>`;
+
+function messagePage(id: string, m: any): string {
+  return shell(`Email — ${m.subject || ""}`, `
+    <div style="padding:8px;display:flex;gap:6px;align-items:center">
+      <a class="btn" href="/">‹ Inbox</a>
+      <span style="flex:1"></span>
+      <form method="post" action="/m/${esc(id)}/delete" onsubmit="return confirm('Hapus email ini?')">
+        <button class="btn danger" type="submit">🗑 Hapus</button>
+      </form>
+    </div>
+    <div style="padding:0 8px 8px">${messageInner(m)}</div>`);
 }
