@@ -121,8 +121,8 @@ export function renderPublicPage(o: PublicOpts): string {
       </div>
     </div>
   </div>
-  <main class="container mx-auto flex-1 p-5 w-full">
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm" id="inboxWrap" style="display:none">${inboxArea}</div>
+  <main class="container mx-auto flex-1 p-5 w-full flex flex-col">
+    <div class="flex-1 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm" id="inboxWrap" style="display:none">${inboxArea}</div>
   </main>
   ${footer}
 </div>`;
@@ -152,14 +152,14 @@ export function renderPublicPage(o: PublicOpts): string {
       </div>
     </div>
   </header>
-  <div class="container mx-auto px-4 -mt-16 mb-8 relative z-10 flex-1">
-    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden" id="inboxWrap" style="display:none">${inboxArea}</div>
+  <div class="container mx-auto px-4 -mt-16 mb-8 relative z-10 flex-1 flex flex-col">
+    <div class="flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden" id="inboxWrap" style="display:none">${inboxArea}</div>
   </div>
   <footer class="bg-gray-800 text-white text-sm px-6 pt-14 pb-6 text-center -mt-6">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>
 </div>`;
   }
 
-  return `${head(o.brand, "", favicon)}
+  return `${head(o.brand, "", favicon, layout === "nebula")}
 <body class="${page}">
 ${bodyHtml}
 <script>

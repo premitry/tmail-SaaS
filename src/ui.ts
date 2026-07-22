@@ -11,7 +11,7 @@ export function attr(s: unknown): string {
 }
 
 // <head> standar: Tailwind (CDN) + Font Awesome + toggle dark mode.
-export function head(title: string, extra = "", faviconHref = "/favicon.svg"): string {
+export function head(title: string, extra = "", faviconHref = "/favicon.svg", defaultDark = true): string {
   return `<!DOCTYPE html><html lang="id" class=""><head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -21,7 +21,7 @@ export function head(title: string, extra = "", faviconHref = "/favicon.svg"): s
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 <link rel="icon" href="${faviconHref}" />
 <script>
-  (function(){ if(localStorage.getItem('darkmode') !== 'disabled') document.documentElement.classList.add('dark'); })();
+  (function(){ var m=localStorage.getItem('darkmode'); var dd=${defaultDark ? "true" : "false"}; if(m==='enabled'||(m!=='disabled'&&dd)) document.documentElement.classList.add('dark'); })();
   function enableDarkMode(){document.documentElement.classList.add('dark');localStorage.setItem('darkmode','enabled');}
   function disableDarkMode(){document.documentElement.classList.remove('dark');localStorage.setItem('darkmode','disabled');}
   function toggleDark(){document.documentElement.classList.contains('dark')?disableDarkMode():enableDarkMode();}
