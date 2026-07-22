@@ -290,6 +290,26 @@ export class DB {
     return out;
   }
 
+  /* ─────────── messages: fallback D1 utk web publik (kalau DO down) ─────────── */
+  async listMessagesByAddress(addr: string): Promise<any[]> {
+    const r = await this.d1.prepare(
+      `SELECT id, from_addr AS sender, subject, preview, received_at, seen AS read FROM messages WHERE lower(to_addr) = ? ORDER BY received_at DESC LIMIT 200`)
+      .bind(addr.toLowerCase()).all();
+    return r.results ?? [];
+  }
+  async getMessageByAddress(addr: string, id: string): Promise<any | null> {
+    const r = await this.d1.prepare(
+      `SELECT id, from_addr AS sender, to_addr, subject, preview, html, text, received_at, seen AS read FROM messages WHERE id = ? AND lower(to_addr) = ?`)
+      .bind(id, addr.toLowerCase()).first();
+    return r || null;
+  }
+  async deleteMessageByAddress(addr: string, id: string): Promise<void> {
+    await this.d1.prepare(`DELETE FROM messages WHERE id = ? AND lower(to_addr) = ?`).bind(id, addr.toLowerCase()).run();
+  }
+  async clearMessagesByAddress(addr: string): Promise<void> {
+    await this.d1.prepare(`DELETE FROM messages WHERE lower(to_addr) = ?`).bind(addr.toLowerCase()).run();
+  }
+
   /* ─────────── messages (inbox gabungan) ─────────── */
   async logMessage(buyerId: string, to: string, from: string, subject: string, preview: string, html: string, text: string): Promise<void> {
     await this.d1.prepare(

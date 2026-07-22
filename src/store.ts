@@ -46,8 +46,11 @@ export async function storeParsed(
   const preview = (text || stripHtml(html)).replace(/\s+/g, " ").trim().slice(0, 140);
   const sender = parsed.from?.address || fallbackSender;
   const subject = parsed.subject || "(tanpa subjek)";
-  await inboxStub(env, address).store({ sender, subject, preview, text, html });
+  // Simpan ke D1 DULU (fallback tahan banting; jalan walau kuota DO habis).
   if (db && buyerId) {
-    try { await db.logMessage(buyerId, address, sender, subject, preview, html, text); } catch { /* jangan gagalkan */ }
+    try { await db.logMessage(buyerId, address, sender, subject, preview, html, text); } catch (e) { console.log("D1 log gagal:", (e as Error).message); }
   }
+  // Baru coba tulis ke DO buat realtime (WS broadcast). Kalau gagal, log-D1 tetep punya email.
+  try { await inboxStub(env, address).store({ sender, subject, preview, text, html }); }
+  catch (e) { console.log("DO store gagal (email tetap di D1):", (e as Error).message); }
 }

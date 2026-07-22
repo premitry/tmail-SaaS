@@ -139,23 +139,36 @@ export async function handlePublic(
     const stub = inboxStub(env, addr);
     if (path === "/api/inbox") {
       if (st.imap_host) ctx.waitUntil(watcherStub(env, buyer.id).ping(buyer.id, true).catch(() => {}));
-      // Jangan pernah 500 ke pengunjung: kalau DO error (mis. kuota), balikin inbox kosong.
-      let messages: unknown[] = [];
-      try { messages = await stub.list(); } catch { messages = []; }
+      // Fallback D1: kalau DO error/kuota habis, baca dari D1 messages log (email tetap ada dari email() handler).
+      let messages: any[] = [];
+      try { messages = await stub.list(); }
+      catch { try { messages = await db.listMessagesByAddress(addr); } catch { messages = []; } }
+      // Kalau DO balikin kosong tapi D1 punya isi, tampilin dari D1 (kejadian saat kuota DO habis).
+      if (!messages.length) {
+        try { const fromD1 = await db.listMessagesByAddress(addr); if (fromD1.length) messages = fromD1; } catch { /* ignore */ }
+      }
       return json({ address: addr, messages });
     }
     if (path === "/api/message") {
       const id = url.searchParams.get("id");
       if (!id) return json({ error: "id kosong" }, 400);
-      const msg = await stub.get(id);
+      let msg: any = null;
+      try { msg = await stub.get(id); } catch { msg = null; }
+      if (!msg) { try { msg = await db.getMessageByAddress(addr, id); } catch { msg = null; } }
       return msg ? json(msg) : json({ error: "tidak ditemukan" }, 404);
     }
     if (path === "/api/delete" && req.method === "POST") {
       const id = url.searchParams.get("id");
       if (!id) return json({ error: "id kosong" }, 400);
-      await stub.del(id); return json({ ok: true });
+      try { await stub.del(id); } catch { /* ignore */ }
+      try { await db.deleteMessageByAddress(addr, id); } catch { /* ignore */ }
+      return json({ ok: true });
     }
-    if (path === "/api/clear" && req.method === "POST") { await stub.clear(); return json({ ok: true }); }
+    if (path === "/api/clear" && req.method === "POST") {
+      try { await stub.clear(); } catch { /* ignore */ }
+      try { await db.clearMessagesByAddress(addr); } catch { /* ignore */ }
+      return json({ ok: true });
+    }
   }
 
   return new Response("Not found", { status: 404 });
