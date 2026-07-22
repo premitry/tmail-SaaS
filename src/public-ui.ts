@@ -278,8 +278,10 @@ function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60)return s
 function fmtTime(ms){ var d=new Date(ms), n=new Date(); function p(x){return ('0'+x).slice(-2);} var t=p(d.getHours())+':'+p(d.getMinutes()); return d.toDateString()===n.toDateString()?t:(p(d.getDate())+'/'+p(d.getMonth()+1)+' '+t); }
 async function loadInbox(){
   if(!addr) return; status('memuat…');
-  const res = await api('/inbox?a=' + encodeURIComponent(addr));
-  const list = $('#inboxList'); const msgs = res.messages || [];
+  var res;
+  try { res = await api('/inbox?a=' + encodeURIComponent(addr)); }
+  catch(e){ status('gagal memuat, coba lagi', 'text-red-500'); return; }
+  const list = $('#inboxList'); if(!list) return; const msgs = (res && res.messages) || [];
   status(msgs.length + ' email', 'text-green-500');
   var _ic=$('#inboxCount'); if(_ic) _ic.textContent=msgs.length;
   if(!msgs.length){ list.innerHTML = '<div class="h-40 flex items-center justify-center text-gray-400">Menunggu email masuk…</div>'; return; }

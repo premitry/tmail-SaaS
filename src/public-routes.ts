@@ -139,7 +139,10 @@ export async function handlePublic(
     const stub = inboxStub(env, addr);
     if (path === "/api/inbox") {
       ctx.waitUntil(watcherStub(env, buyer.id).ping(buyer.id, true).catch(() => {}));
-      return json({ address: addr, messages: await stub.list() });
+      // Jangan pernah 500 ke pengunjung: kalau DO error (mis. kuota), balikin inbox kosong.
+      let messages: unknown[] = [];
+      try { messages = await stub.list(); } catch { messages = []; }
+      return json({ address: addr, messages });
     }
     if (path === "/api/message") {
       const id = url.searchParams.get("id");

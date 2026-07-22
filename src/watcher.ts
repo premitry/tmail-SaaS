@@ -27,7 +27,26 @@ export class Watcher extends DurableObject<Env> {
   async alarm(): Promise<void> {
     const buyerId = await this.ctx.storage.get<string>("buyerId");
     if (!buyerId) return;
-    try { await pollBuyerNow(this.env, buyerId); } catch { /* ignore */ }
+
+    const now = Date.now();
+    const failUntil = (await this.ctx.storage.get<number>("imapFailUntil")) || 0;
+    // Dalam masa cooldown (IMAP mati/salah) → jangan poll sama sekali; jangan reschedule.
+    // Cron tetap ping tiap menit; setelah cooldown lewat baru dicoba lagi (1x per 10 mnt).
+    if (now < failUntil) return;
+
+    let ok = false;
+    try { const r = await pollBuyerNow(this.env, buyerId); ok = !!(r && r.ok); }
+    catch { ok = false; }
+
+    if (ok) {
+      await this.ctx.storage.put("imapFails", 0);
+    } else {
+      const fails = ((await this.ctx.storage.get<number>("imapFails")) || 0) + 1;
+      await this.ctx.storage.put("imapFails", fails);
+      // 3x gagal beruntun → cooldown 10 menit + hentikan loop cepat (biar durasi DO gak jebol).
+      if (fails >= 3) { await this.ctx.storage.put("imapFailUntil", now + 600_000); return; }
+    }
+
     const lastActive = (await this.ctx.storage.get<number>("lastActive")) || 0;
     if (Date.now() - lastActive < ACTIVE_WINDOW) {
       await this.ctx.storage.setAlarm(Date.now() + FAST_INTERVAL);
