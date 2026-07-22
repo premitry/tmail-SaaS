@@ -4,7 +4,7 @@ import { DEFAULT_LOGO, THEME_PREVIEWS } from "./assets";
 
 export function renderLogin(brand: string, role: "owner" | "buyer", error = ""): string {
   const title = role === "owner" ? "Owner Panel" : brand + " Admin";
-  return `${head(title + " — Login")}
+  return `${head(title + " — Login", '<style>html:not(.dark) body{background-color:#e4e6eb}html:not(.dark) .bg-white{background-color:#f4f5f7!important}html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}</style>')}
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex items-center justify-center px-4">
   <form id="f" class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 space-y-4">
     <div class="text-center">
@@ -48,6 +48,11 @@ const SB_STYLE = `<style>
   body.sb-open #sb{transform:translateX(0)}
   body.sb-open #sbBackdrop{display:block}
 }
+/* Tema terang dilembutin biar gak silau */
+html:not(.dark) body{background-color:#e4e6eb}
+html:not(.dark) .bg-white{background-color:#f4f5f7!important}
+html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}
+html:not(.dark) .bg-gray-50{background-color:#ecedf1!important}
 </style>`;
 
 export function renderAdminShell(brand: string): string {
