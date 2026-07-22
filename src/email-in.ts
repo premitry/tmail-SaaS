@@ -29,11 +29,33 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
   const raw = await new Response(message.raw).arrayBuffer();
   const parsed = await PostalMime.parse(raw);
   const db = new DB(env.DB);
+  const saasZone = (env.SAAS_ZONE || "").toLowerCase();
 
   const recipients = collectRecipients(message.to, parsed);
 
-  // Cocokin tiap alamat ke buyer (via domain aktif). Satu email bisa masuk ke banyak inbox
-  // kalau ada multi-recipient di domain-domain yang beda buyer.
+  // ── 1. LOG ke Mail Hub kalau email lewat catchall apex (mis. envelope=*@imapku.icu).
+  // Ini master log — bahkan email yg akhirnya masuk ke inbox buyer tetap ke-log di sini.
+  const envelopeTo = (message.to || "").toLowerCase();
+  if (saasZone && envelopeTo.endsWith("@" + saasZone)) {
+    const text = parsed.text || "";
+    const html = parsed.html || "";
+    const preview = String(text || html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim().slice(0, 140);
+    const from = String(parsed.from?.address || message.from || "unknown").toLowerCase();
+    const subj = parsed.subject || "(tanpa subjek)";
+    // Cari "ke:" asli (sebelum di-forward). Prefer header To, fallback envelope alias.
+    const headerTo = (parsed.to || [])[0]?.address?.toLowerCase();
+    const origTo = headerTo || envelopeTo;
+    try { await db.logHubMessage(origTo, from, subj, preview, html, text); } catch (e) { console.log("hub log err:", (e as Error).message); }
+    // Enforce simpan-maks di background.
+    ctx.waitUntil((async () => {
+      try {
+        const n = parseInt(await db.platformGet("hub_max_stored", "500"), 10);
+        if (!isNaN(n) && n > 0) await db.trimHubMessages(n);
+      } catch { /* ignore */ }
+    })());
+  }
+
+  // ── 2. Route ke inbox buyer (via domain aktif). Multi-recipient beda buyer → multi-inbox.
   const routed: { addr: string; buyerId: string }[] = [];
   const seenBuyers = new Set<string>();
   for (const rcpt of recipients) {
@@ -49,42 +71,18 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
     const fromAddr = String(parsed.from?.address || message.from || "").toLowerCase();
     const subject = String(parsed.subject || "").toLowerCase();
 
-    // 1. Auto-verifikasi email Cloudflare (destination address).
+    // Auto-verifikasi email Cloudflare (destination address).
     const looksCf = fromAddr.includes("cloudflare.com") || subject.includes("verify your email") || subject.includes("cloudflare");
     if (looksCf) {
-      const body = String(parsed.text || parsed.html || "");
-      const urls = body.match(/https?:\/\/[^\s"'<>]+/g) || [];
+      const bodyStr = String(parsed.text || parsed.html || "");
+      const urls = bodyStr.match(/https?:\/\/[^\s"'<>]+/g) || [];
       const verifyUrl = urls.find((u) => /cloudflare\.com/i.test(u) && /verify|token=/i.test(u));
       if (verifyUrl) {
         try { const r = await fetch(verifyUrl, { method: "GET", redirect: "follow" }); console.log("auto-verify CF:", verifyUrl.slice(0, 80), "→", r.status); }
         catch (e) { console.log("auto-verify gagal:", (e as Error).message); }
-        return;
       }
     }
-
-    // 2. Email ke apex zona (mis. *@imapku.icu) → simpan ke Mail Hub.
-    const saasZone = (env.SAAS_ZONE || "").toLowerCase();
-    const hubRcpts = recipients.filter((r) => r.endsWith("@" + saasZone));
-    if (saasZone && hubRcpts.length) {
-      const text = parsed.text || "";
-      const html = parsed.html || "";
-      const preview = String(text || html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim().slice(0, 140);
-      const from = fromAddr || message.from || "unknown";
-      const subj = parsed.subject || "(tanpa subjek)";
-      for (const to of hubRcpts) {
-        try { await db.logHubMessage(to, from, subj, preview, html, text); } catch (e) { console.log("hub log err:", (e as Error).message); }
-      }
-      // Enforce simpan-maks (drop yang paling lama kalau lewat batas).
-      ctx.waitUntil((async () => {
-        try {
-          const n = parseInt(await db.platformGet("hub_max_stored", "500"), 10);
-          if (!isNaN(n) && n > 0) await db.trimHubMessages(n);
-        } catch { /* ignore */ }
-      })());
-      return;
-    }
-
-    console.log("email masuk: tidak ada domain buyer/hub yang cocok. To=" + message.to + " From=" + fromAddr);
+    // Nggak ada buyer cocok — udah di-log ke Mail Hub di atas (kalau lewat apex).
     return;
   }
 
