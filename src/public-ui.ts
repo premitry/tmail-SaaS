@@ -41,6 +41,10 @@ const BP_STYLE = `<style>
 .bp-btn:hover{background:#e2dbc9}
 .bp-nav a{color:inherit;font-weight:700;letter-spacing:.08em}
 .bp-nav a:hover{text-decoration:underline}
+.bp-meta{background:#efe9dd;color:#16233f;padding:12px 16px;border-bottom:2px solid #16233f}
+.bp-meta .lbl{color:#16233f;opacity:.55;font-weight:700;letter-spacing:.04em}
+.bp-meta .val{color:#16233f;font-weight:500}
+.bp-meta .val.subj{font-weight:800}
 </style>`;
 
 // mode: sidebar | mantis | nebula
@@ -311,11 +315,15 @@ async function openMsg(id){
   window.__mHtml = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
   window.__mRaw = 'From: '+(res.sender||'')+'\\nTo: '+addr+'\\nSubject: '+(res.subject||'')+'\\nDate: '+new Date(res.received_at).toLocaleString()+'\\n\\n'+(res.text||'(email format HTML — buka tab HTML)');
   var trash='<button onclick="delMsg(\\''+id+'\\')" title="Hapus email" class="text-red-600 hover:text-red-700 text-2xl"><i class="fas fa-trash"></i></button>';
-  var metaGrid='<div style="display:grid;grid-template-columns:max-content 1fr;gap:3px 12px">'+
-      '<span class="opacity-60">FROM:</span><span class="break-all">'+escapeHtml(res.sender)+'</span>'+
-      '<span class="opacity-60">TO:</span><span class="break-all">'+escapeHtml(addr)+'</span>'+
-      '<span class="opacity-60">DATE:</span><span>'+escapeHtml(new Date(res.received_at).toLocaleString())+'</span>'+
-      '<span class="opacity-60">SUBJECT:</span><span class="break-words font-bold">'+escapeHtml(res.subject)+'</span>'+
+  var isBp = !!document.querySelector('.bp-card');
+  var lbl = isBp ? 'lbl' : 'opacity-60';
+  var val = isBp ? 'val' : '';
+  var subj = isBp ? 'val subj' : 'font-bold';
+  var metaGrid='<div style="display:grid;grid-template-columns:max-content 1fr;gap:6px 14px">'+
+      '<span class="'+lbl+'">FROM:</span><span class="'+val+' break-all">'+escapeHtml(res.sender)+'</span>'+
+      '<span class="'+lbl+'">TO:</span><span class="'+val+' break-all">'+escapeHtml(addr)+'</span>'+
+      '<span class="'+lbl+'">DATE:</span><span class="'+val+'">'+escapeHtml(new Date(res.received_at).toLocaleString())+'</span>'+
+      '<span class="'+lbl+'">SUBJECT:</span><span class="'+subj+' break-words">'+escapeHtml(res.subject)+'</span>'+
     '</div>';
   var bodyBlock='<div id="msgBody" class="flex-1 flex flex-col overflow-auto min-h-[300px]"></div>';
   var tabs='<div class="flex border-t border-gray-200 dark:border-gray-800 text-sm font-semibold"><button id="tabHtml" onclick="msgTab(\\'html\\')" class="flex-1 py-2.5 text-center">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')" class="flex-1 py-2.5 text-center border-l border-gray-200 dark:border-gray-800">RAW</button></div>';
