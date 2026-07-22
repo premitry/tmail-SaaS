@@ -47,7 +47,13 @@ export async function handlePublic(
       { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
   }
 
-  // Host tak dikenal → info singkat.
+  // Owner platform host: root → redirect ke /admin (biar nggak nampilin 404).
+  if (tenant.kind === "owner") {
+    if (path === "/docs") return html(renderDocs(env.BRAND_NAME || "TMail"));
+    if (path === "/") return new Response("", { status: 302, headers: { "location": "/admin" } });
+    return new Response("Not found", { status: 404 });
+  }
+  // Host tak dikenal.
   if (tenant.kind !== "buyer") {
     if (path === "/docs") return html(renderDocs(env.BRAND_NAME || "TMail"));
     return new Response("Domain belum terhubung ke buyer manapun.", { status: 404 });
