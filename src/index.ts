@@ -1,10 +1,12 @@
-// Worker utama: bootstrap → resolusi tenant → admin/publik. Cron: poll IMAP + cek expiry.
+// Worker utama: bootstrap → resolusi tenant → admin/publik.
+// Cron: cek expiry + GC. Email masuk via CF Email Routing → email() handler.
 import type { Env } from "./types";
 import { DB } from "./db";
 import { resolveTenant } from "./auth";
 import { handleAdmin } from "./admin-routes";
 import { handlePublic } from "./public-routes";
 import { pingAllWatchers } from "./watcher";
+import { handleIncomingEmail } from "./email-in";
 
 export { Mailbox } from "./mailbox";
 export { Watcher } from "./watcher";
@@ -31,7 +33,15 @@ export default {
     ctx.waitUntil((async () => {
       try { await db.expireOverdue(); } catch (e) { console.log("expire err", (e as Error).message); }
       try { await db.gcAllMessages(); } catch (e) { console.log("gc err", (e as Error).message); }
+      // Kompat: masih ping Watcher buat buyer yang mau pakai IMAP (opsional).
+      // Buyer full-CF nggak spin DO ini (guard di public-routes).
       try { await pingAllWatchers(env); } catch (e) { console.log("poll err", (e as Error).message); }
     })());
+  },
+
+  // Email masuk via CF Email Routing (didaftarkan di dashboard zona imapku.icu).
+  async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
+    try { await handleIncomingEmail(message, env, ctx); }
+    catch (e) { console.log("email() err:", (e as Error).message); }
   },
 } satisfies ExportedHandler<Env>;

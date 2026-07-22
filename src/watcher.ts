@@ -13,7 +13,12 @@ export class Watcher extends DurableObject<Env> {
   // Dipanggil saat pengunjung buka/refresh inbox (active=true) atau cron (active=false).
   async ping(buyerId: string, active: boolean): Promise<void> {
     await this.ctx.storage.put("buyerId", buyerId);
-    if (active) await this.ctx.storage.put("lastActive", Date.now());
+    if (active) {
+      await this.ctx.storage.put("lastActive", Date.now());
+      // Ada pengunjung nyata → paksa coba lagi walau lagi cooldown (server flaky bisa pulih).
+      await this.ctx.storage.put("imapFailUntil", 0);
+      await this.ctx.storage.put("imapFails", 0);
+    }
     const a = await this.ctx.storage.getAlarm();
     if (a === null) await this.ctx.storage.setAlarm(Date.now() + 1500);
   }
@@ -40,11 +45,12 @@ export class Watcher extends DurableObject<Env> {
 
     if (ok) {
       await this.ctx.storage.put("imapFails", 0);
+      await this.ctx.storage.put("imapFailUntil", 0);
     } else {
       const fails = ((await this.ctx.storage.get<number>("imapFails")) || 0) + 1;
       await this.ctx.storage.put("imapFails", fails);
-      // 3x gagal beruntun → cooldown 10 menit + hentikan loop cepat (biar durasi DO gak jebol).
-      if (fails >= 3) { await this.ctx.storage.put("imapFailUntil", now + 600_000); return; }
+      // 3x gagal beruntun → cooldown 3 menit + hentikan loop cepat (biar durasi DO gak jebol).
+      if (fails >= 3) { await this.ctx.storage.put("imapFailUntil", now + 180_000); return; }
     }
 
     const lastActive = (await this.ctx.storage.get<number>("lastActive")) || 0;

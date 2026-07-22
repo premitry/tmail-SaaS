@@ -31,8 +31,8 @@ class ImapClient {
     );
     this.writer = this.socket.writable.getWriter();
     this.reader = this.socket.readable.getReader();
-    // Greeting dibatasi 8 dtk: host mati / port salah gak boleh nge-hang (habisin durasi DO).
-    await withTimeout(this.readLine(), 8000);
+    // Greeting dibatasi 10 dtk: host mati / port salah gak boleh nge-hang (habisin durasi DO).
+    await withTimeout(this.readLine(), 10000);
   }
 
   private append(chunk: Uint8Array) {
@@ -234,10 +234,12 @@ export async function pollBuyerNow(env: Env, buyerId: string): Promise<{ ok: boo
   if (!domains.length) return { ok: false, error: "belum ada domain aktif" };
   const pass = await decryptSecret(env, st.imap_pass_enc);
   if (!pass) return { ok: false, error: "password IMAP kosong" };
+  // 1x attempt, dibatasi 12 dtk total → aman dari batas durasi DO.
+  // Retry cukup lewat cron/ping antar-invocation (terpisah, gak numpuk durasi).
   try {
     const n = await withTimeout(
       pollBuyer(env, db, buyerId, st.imap_host, st.imap_port, st.imap_user, pass, st.imap_tls !== 0, st.imap_last_uid, domains),
-      20000,
+      12000,
     );
     if (n > 0) await db.incrMessages(buyerId, n);
     return { ok: true, count: n };

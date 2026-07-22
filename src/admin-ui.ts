@@ -220,29 +220,56 @@ async function loadChart(days){ const el=$('#chartBody'); if(el)el.innerHTML='<d
 
 /* ============ INBOX (gabungan + search + popup) ============ */
 let inbState={page:1,q:''};
+function fmtSender(from){ var m=String(from||'').match(/^\s*"?([^"<]+?)"?\s*<([^>]+)>\s*$/); if(m) return '"'+esc(m[1].trim())+'" &lt;'+esc(m[2].trim())+'&gt;'; return esc(from||''); }
+function fmtWaktu(ms){ var d=new Date(ms), n=new Date(); function p(x){return ('0'+x).slice(-2);} var t=p(d.getHours())+'.'+p(d.getMinutes()); var b=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']; return d.toDateString()===n.toDateString()?t:(d.getDate()+' '+b[d.getMonth()]+', '+t); }
 function vInbox(){
-  view.innerHTML='<h1 class="text-2xl font-bold mb-2">Inbox</h1><p class="text-sm text-gray-400 mb-4">Semua email masuk dari seluruh alamat & domainmu.</p>'+
-    '<div class="relative max-w-md mb-4"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>'+
-    '<input id="inbQ" placeholder="Cari subjek / pengirim / alamat…" class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></div>'+
-    '<div id="inbList" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800"></div>'+
-    '<div id="inbPage" class="flex items-center justify-between mt-3 text-sm text-gray-500"></div>';
+  window.__sel = window.__sel || new Set();
+  view.innerHTML=
+    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">'+
+      // Header biru gaya FAV·MAIL
+      '<div class="flex items-center justify-between px-4 py-2.5 text-white text-sm font-semibold" style="background:#1e3a8a">'+
+        '<div class="flex items-center gap-3"><i class="fas fa-inbox"></i><span>INBOX</span></div>'+
+        '<div><span id="inbCount">0 email</span><span id="inbNew" class="ml-2 opacity-90"></span></div>'+
+      '</div>'+
+      // Toolbar
+      '<div class="px-4 py-2 flex flex-wrap items-center gap-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">'+
+        '<label class="inline-flex items-center gap-2 text-xs border border-gray-300 dark:border-gray-700 rounded px-2 py-1 cursor-pointer bg-white dark:bg-gray-800"><input id="inbAll" type="checkbox" onchange="inbSelectAll(this.checked)"><span>Pilih semua</span></label>'+
+        '<button id="inbDel" onclick="inbBulkDelete()" class="text-xs border border-red-300 text-red-700 bg-red-50 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 px-2 py-1 rounded"><i class="fas fa-trash mr-1"></i>Hapus dipilih</button>'+
+        '<div class="relative flex-1 min-w-[180px] max-w-md"><i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>'+
+          '<input id="inbQ" placeholder="Cari email…" class="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"/></div>'+
+        '<span id="inbPageInfo" class="text-xs text-gray-500 ml-auto"></span>'+
+        '<div class="flex gap-1"><button onclick="inbPage(-1)" id="inbPrev" class="w-8 h-7 border dark:border-gray-700 rounded text-sm disabled:opacity-30"><i class="fas fa-chevron-left"></i></button><button onclick="inbPage(1)" id="inbNext" class="w-8 h-7 border dark:border-gray-700 rounded text-sm disabled:opacity-30"><i class="fas fa-chevron-right"></i></button></div>'+
+      '</div>'+
+      '<div id="inbList" class="divide-y divide-gray-100 dark:divide-gray-800"></div>'+
+    '</div>';
   let t; $('#inbQ').oninput=(e)=>{ clearTimeout(t); t=setTimeout(()=>{ inbState.q=e.target.value; inbState.page=1; loadInbox(); },300); };
   loadInbox();
 }
 async function loadInbox(){
   const d=await api('/inbox?page='+inbState.page+'&q='+encodeURIComponent(inbState.q));
-  const rows=d.messages||[];
-  $('#inbList').innerHTML = rows.length ? rows.map(m=>
-    '<div class="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40 '+(m.seen?'':'bg-indigo-50/40 dark:bg-gray-700/20')+'" onclick="openMsg(\''+m.id+'\')">'+
-      '<div class="flex justify-between gap-3"><div class="font-medium truncate '+(m.seen?'':'font-semibold')+'">'+esc(m.from_addr)+'</div><div class="text-xs text-gray-400 whitespace-nowrap">'+fmtTime(m.received_at)+'</div></div>'+
-      '<div class="text-sm truncate">'+esc(m.subject||'(tanpa subjek)')+'</div>'+
-      '<div class="text-xs text-gray-400 truncate">ke: '+esc(m.to_addr)+' · '+esc(m.preview||'')+'</div></div>'
-  ).join('') : '<div class="p-8 text-center text-gray-400">Belum ada email</div>';
-  $('#inbPage').innerHTML = '<span>'+(d.total||0)+' email · hal '+(d.page||1)+'/'+(d.pages||1)+'</span>'+
-    '<span class="flex gap-2">'+
-      '<button onclick="inbPage(-1)" '+((d.page||1)<=1?'disabled':'')+' class="px-3 py-1 border dark:border-gray-700 rounded disabled:opacity-40">Prev</button>'+
-      '<button onclick="inbPage(1)" '+((d.page||1)>=(d.pages||1)?'disabled':'')+' class="px-3 py-1 border dark:border-gray-700 rounded disabled:opacity-40">Next</button></span>';
+  const rows=d.messages||[]; const nNew = rows.filter(function(m){return !m.seen;}).length;
+  $('#inbCount').textContent = (d.total||0)+' email';
+  $('#inbNew').innerHTML = nNew ? '· <span class="bg-white/25 rounded px-1.5 py-0.5">'+nNew+' baru</span>' : '';
+  $('#inbList').innerHTML = rows.length ? rows.map(function(m){ var sel = window.__sel.has(m.id);
+    return '<div class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/40 '+(m.seen?'':'bg-indigo-50/30 dark:bg-indigo-900/10')+'">'+
+      '<input type="checkbox" data-id="'+m.id+'" '+(sel?'checked':'')+' onchange="inbToggleSel(this)" class="mt-1"/>'+
+      '<div class="flex-1 min-w-0 cursor-pointer" onclick="openMsg(\''+m.id+'\')">'+
+        '<div class="flex justify-between gap-3 text-sm text-gray-700 dark:text-gray-300">'+
+          '<div class="truncate '+(m.seen?'':'font-semibold')+'">'+fmtSender(m.from_addr)+'</div>'+
+          '<div class="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">'+fmtWaktu(m.received_at)+'</div>'+
+        '</div>'+
+        '<div class="text-[15px] '+(m.seen?'':'font-bold')+' truncate">'+esc(m.subject||'(tanpa subjek)')+'</div>'+
+        '<div class="text-xs text-gray-500 truncate">ke: '+esc(m.to_addr)+'</div>'+
+      '</div></div>';
+  }).join('') : '<div class="p-10 text-center text-gray-400">Belum ada email</div>';
+  const p=d.page||1, pp=d.pages||1;
+  $('#inbPageInfo').textContent = p+'/'+pp;
+  $('#inbPrev').disabled = p<=1; $('#inbNext').disabled = p>=pp;
+  $('#inbAll').checked = false;
 }
+function inbToggleSel(cb){ if(cb.checked) window.__sel.add(cb.dataset.id); else window.__sel.delete(cb.dataset.id); }
+function inbSelectAll(on){ document.querySelectorAll('#inbList input[type=checkbox][data-id]').forEach(function(cb){ cb.checked=on; if(on) window.__sel.add(cb.dataset.id); else window.__sel.delete(cb.dataset.id); }); }
+async function inbBulkDelete(){ const ids=[...window.__sel]; if(!ids.length){ alert('Pilih email dulu.'); return; } if(!confirm('Hapus '+ids.length+' email?')) return; for(const id of ids){ await api('/inbox/delete',{method:'POST',body:JSON.stringify({id})}); } window.__sel.clear(); loadInbox(); }
 function inbPage(delta){ inbState.page=Math.max(1,inbState.page+delta); loadInbox(); }
 async function openMsg(id){
   const m=await api('/inbox/msg?id='+id);
@@ -298,7 +325,19 @@ async function vSettings(){
     '<div class="flex flex-wrap gap-6">'+colorField('g_c1','Warna Primer','Sidebar.',s.color_primary)+colorField('g_c2','Sekunder','Tombol Create.',s.color_secondary)+colorField('g_c3','Tersier','Tombol Random.',s.color_tertiary)+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
-  card('IMAP','Mailbox catch-all yang menerima email semua domainmu.',
+  card('Email Routing (rekomendasi)','Terima email langsung tanpa VPS/IMAP — realtime & gratis.',
+    '<div class="text-sm space-y-3">'+
+      '<div class="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900 text-indigo-900 dark:text-indigo-200 flex gap-2"><i class="fas fa-info-circle mt-0.5"></i><div>Aktifkan Email Routing di akun Cloudflare kamu untuk tiap domain, lalu forward semua email ke <b class="font-mono select-all">catchall@imapku.icu</b>. Sistem otomatis pilah email ke inbox pengunjung sesuai alamat asli.</div></div>'+
+      '<div><b class="text-xs uppercase text-gray-500">Langkah setup (di dashboard Cloudflare akun kamu):</b>'+
+      '<ol class="list-decimal ml-5 space-y-1 mt-1 text-gray-700 dark:text-gray-300">'+
+        '<li>Buka <a href="https://dash.cloudflare.com" target="_blank" class="text-indigo-600 underline">dash.cloudflare.com</a> → pilih domainmu → <b>Email → Email Routing</b>.</li>'+
+        '<li>Klik <b>Enable Email Routing</b> (CF akan menambahkan MX records otomatis).</li>'+
+        '<li>Di tab <b>Destination addresses</b>, tambah <span class="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">catchall@imapku.icu</span> → cek kotak masuk verifikasi (kami akan bantu auto-verifikasi).</li>'+
+        '<li>Di tab <b>Routing rules → Catch-all address</b>: Action <b>Send to an email</b>, Destination <span class="font-mono">catchall@imapku.icu</span>, Save.</li>'+
+        '<li>Selesai. Kirim email tes ke alamat apa pun di domainmu — muncul di Inbox dalam 1-2 detik.</li>'+
+      '</ol></div>'+
+    '</div>')+
+  card('IMAP (fallback)','Opsional. Kosongkan Host kalau sudah pakai Email Routing di atas.',
     field('Host','mis. imap.domain.com',inp('i_host',s.imap_host))+
     '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+field('TLS','Implicit TLS.',toggle('i_tls',s.imap_tls,'993'))+'</div>'+
     field('Username','User login mailbox.',inp('i_user',s.imap_user))+
