@@ -292,10 +292,6 @@ async function vSettings(){
     '<div class="flex flex-wrap gap-6">'+colorField('g_c1','Warna Primer','Sidebar.',s.color_primary)+colorField('g_c2','Sekunder','Tombol Create.',s.color_secondary)+colorField('g_c3','Tersier','Tombol Random.',s.color_tertiary)+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
-  card('Tampilan Landing','Teks halaman depan web publik (dipakai tema Blueprint).',
-    field('Heading','Judul besar di tengah.',inp('h_head',s.hero_heading||''))+
-    field('Subtitle','Kalimat di bawah judul.',inp('h_sub',s.hero_subtitle||''))+
-    saveBtn('saveHero()'))+
   card('IMAP','Mailbox catch-all yang menerima email semua domainmu.',
     field('Host','mis. imap.domain.com',inp('i_host',s.imap_host))+
     '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+field('TLS','Implicit TLS.',toggle('i_tls',s.imap_tls,'993'))+'</div>'+
@@ -316,6 +312,10 @@ async function vSettings(){
   card('Themes','Klik tema untuk ganti tampilan web publik — langsung tersimpan.',
     '<div id="themeCards" class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl"></div>'+
     '<a href="/'+QS+'" target="_blank" class="text-sm text-indigo-600 inline-block mt-3">Buka web publik &rarr;</a>')+
+  '<div id="landingCard" style="display:'+(s.theme==='blueprint'?'block':'none')+'">'+card('Tampilan Landing','Teks halaman depan tema Blueprint.',
+    field('Heading','Judul besar di tengah.',inp('h_head',s.hero_heading||''))+
+    field('Subtitle','Kalimat di bawah judul.',inp('h_sub',s.hero_subtitle||''))+
+    saveBtn('saveHero()'))+'</div>'+
   card('Advance','API key & kunci halaman.',
     '<h4 class="text-sm font-semibold mb-1">API Keys</h4><p class="text-xs text-gray-400 mb-2">Untuk otomasi eksternal. <a href="/docs'+QS+'" target="_blank" class="text-indigo-600">Docs</a></p><div id="keyList" class="space-y-2 mb-3 max-w-lg"></div>'+
     '<div class="flex gap-2 mb-6 max-w-md"><input id="keyLabel" placeholder="label (mis. bot-signup)" class="flex-1 '+INP+'"/><button onclick="addKey()" class="bg-indigo-600 text-white px-4 rounded-lg">Buat</button></div>'+
@@ -365,7 +365,7 @@ function renderThemeCards(){
     return '<button onclick="setTheme(\''+d[0]+'\')" class="text-left rounded-xl overflow-hidden border-2 '+(cur===d[0]?'border-indigo-500 ring-2 ring-indigo-200':'border-gray-200 dark:border-gray-700')+' hover:border-indigo-400 transition">'+prev+
     '<div class="px-2 py-1.5 bg-white dark:bg-gray-800"><div class="text-sm font-medium flex items-center gap-1">'+d[1]+(cur===d[0]?' <i class="fas fa-check-circle text-indigo-500 text-xs"></i>':'')+'</div><div class="text-[11px] text-gray-400">'+d[2]+'</div></div></button>'; }).join('');
 }
-async function setTheme(theme){ window.__S.theme=theme; renderThemeCards(); await put({theme}); }
+async function setTheme(theme){ window.__S.theme=theme; renderThemeCards(); var lc=document.getElementById('landingCard'); if(lc) lc.style.display=theme==='blueprint'?'block':'none'; await put({theme}); }
 function saveLock(){ put({lock_json:JSON.stringify({enable:$('#lk_on').checked,text:$('#lk_text').value,password:$('#lk_pass').value})}); }
 async function loadKeys(){ const d=await api('/keys'); $('#keyList').innerHTML=(d.keys||[]).map(k=>'<div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-sm"><div class="min-w-0"><span class="font-mono">'+esc(k.key)+'</span> <span class="text-gray-400 ml-2">'+esc(k.label)+'</span></div><button onclick="delKey(\''+k.id+'\')" class="text-red-600">Hapus</button></div>').join('')||'<div class="text-gray-400 text-sm">Belum ada key</div>'; }
 async function addKey(){ const label=$('#keyLabel').value; const r=await api('/keys',{method:'POST',body:JSON.stringify({label})}); if(r.key){ $('#keyLabel').value=''; loadKeys(); toast('Key dibuat'); } }

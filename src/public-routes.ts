@@ -7,6 +7,7 @@ import { parseCookies } from "./auth";
 import { inboxStub, genLocalPart } from "./store";
 import { watcherStub } from "./watcher";
 import { MANTIS_PATTERN } from "./assets";
+import { TAILWIND_CSS } from "./tailwind-css";
 
 function dataUrlToResponse(dataUrl: string, contentType: string): Response {
   const b64 = dataUrl.split(",")[1] || "";
@@ -33,6 +34,9 @@ export async function handlePublic(
 ): Promise<Response> {
   const path = url.pathname;
 
+  if (path === "/assets/app.css") {
+    return new Response(TAILWIND_CSS, { headers: { "content-type": "text/css; charset=utf-8", "cache-control": "public, max-age=86400" } });
+  }
   if (path === "/assets/mantis-pattern.png") {
     return dataUrlToResponse(MANTIS_PATTERN, "image/png");
   }

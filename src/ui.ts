@@ -16,8 +16,7 @@ export function head(title: string, extra = "", faviconHref = "/favicon.svg", de
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${esc(title)}</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={darkMode:'class'}</script>
+<link rel="stylesheet" href="/assets/app.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 <link rel="icon" href="${faviconHref}" />
 <script>
