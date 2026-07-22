@@ -74,18 +74,8 @@ const SB_STYLE = `<style>${HUB_SKIN}
 #userMenu{position:absolute;bottom:34px;left:6px;right:6px;background:#c0c0c0;border:2px solid;border-color:#dfdfdf #808080 #808080 #dfdfdf;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000,3px 3px 8px rgba(0,0,0,.4);z-index:5}
 #userMenu a,#userMenu button{display:block;width:100%;text-align:left;padding:4px 10px;background:none;border:0;font:inherit;cursor:pointer;color:#000}
 #userMenu a:hover,#userMenu button:hover{background:#000080;color:#fff}
-/* Override Tailwind classes yang dipakai di view content biar berbaur Win98 */
-.bg-white,.dark .bg-white,.bg-gray-50,.bg-gray-100,.dark .bg-gray-800,.dark .bg-gray-900{background:#c0c0c0!important;color:#000!important}
-.dark .text-gray-100,.dark .text-gray-200,.dark .text-gray-300,.text-gray-800,.text-gray-900{color:#000!important}
-.text-gray-400,.text-gray-500,.text-gray-600,.dark .text-gray-400{color:#404040!important}
-.rounded,.rounded-lg,.rounded-xl,.rounded-2xl,.rounded-full,.rounded-md{border-radius:0!important}
-.shadow,.shadow-md,.shadow-lg,.shadow-xl,.shadow-2xl,.shadow-sm{box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #000!important}
-.border,.border-gray-200,.border-gray-300,.border-gray-700,.border-gray-800,.dark .border-gray-700,.dark .border-gray-800{border-color:#808080!important}
-button.bg-indigo-600,button.bg-indigo-700,.bg-indigo-600,.bg-indigo-700,button[type=submit]:not(.btn){background:#c0c0c0!important;color:#000!important;border:2px solid!important;border-color:#fff #808080 #808080 #fff!important;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #000!important;border-radius:0!important;padding:3px 12px!important;font-weight:bold!important}
-button.bg-indigo-600:active,button.bg-indigo-700:active,.bg-indigo-600:active,.bg-indigo-700:active{border-color:#808080 #fff #fff #808080!important;box-shadow:inset -1px -1px 0 #dfdfdf,inset 1px 1px 0 #000!important}
-button.bg-red-600,.bg-red-600{background:#c0c0c0!important;color:#800000!important;border:2px solid!important;border-color:#fff #808080 #808080 #fff!important;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #000!important;border-radius:0!important;font-weight:bold!important}
-input:not([type=checkbox]):not([type=radio]),select,textarea{background:#fff!important;color:#000!important;border:2px solid!important;border-color:#808080 #fff #fff #808080!important;border-radius:0!important;padding:3px 5px!important}
-.divide-y>*{border-top-color:#808080!important}
+/* Content view pakai skin normal (bukan Win98). Reset font di dalam #view biar Tailwind normal. */
+#view{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2937}
 </style>`;
 
 export function renderAdminShell(brand: string): string {
@@ -115,7 +105,7 @@ export function renderAdminShell(brand: string): string {
     <a class="btn" href="/admin">↻</a>
   </div>
   <div id="banner"></div>
-  <div class="win"><div id="view" class="win-body">Memuat…</div></div>
+  <div id="view" style="background:#f4f5f7;padding:24px;min-height:calc(100vh - 80px)">Memuat…</div>
 </div>
 <div id="modalRoot"></div>
 <script>window.DEFAULT_LOGO=${JSON.stringify(DEFAULT_LOGO)};window.THEME_PREVIEWS=${JSON.stringify(THEME_PREVIEWS)};</script>
