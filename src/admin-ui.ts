@@ -416,13 +416,20 @@ async function submitCreateBuyer(){
   if(r.error){alert(r.error);return;}
   closeModal(); loadUsers(); toast('Buyer dibuat');
 }
+function copyVal(t,e){ if(e){try{e.stopPropagation();}catch(_){}} if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(t).then(function(){toast('Tersalin: '+t);}).catch(function(){fbCopy(t);}); } else fbCopy(t); }
+function fbCopy(t){ var ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); try{document.execCommand('copy'); toast('Tersalin: '+t);}catch(_){} document.body.removeChild(ta); }
+function dnsRow(label,val){ return '<div class="flex items-center justify-between gap-2 py-0.5"><span class="min-w-0 break-all">'+label+': <b>'+esc(val)+'</b></span><button onclick="copyVal(\''+esc(val)+'\',event)" class="shrink-0 text-blue-500 hover:text-blue-700" title="Salin"><i class="far fa-copy"></i></button></div>'; }
 function dnsHint(h,d){
   var active=h.status==='active';
   var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
   if(active) return '<div class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle"></i> Domain aktif & siap dipakai</div>';
   if(isSub) return '<div class="text-xs text-gray-500 mt-1">Sedang diaktifkan…</div>';
   var apex=h.hostname.split('.').length<=2;
-  return '<div class="text-xs text-gray-700 dark:text-gray-200 mt-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3"><div class="font-semibold mb-1">Set DNS ini di penyedia domain biar aktif:</div><div class="font-mono leading-relaxed">'+(apex?('Tipe: <b>CNAME</b> (flattening) / A-ALIAS<br>Nama: <b>@</b> (root)<br>Target: <b>'+esc(d.saasTarget)+'</b>'):('Tipe: <b>CNAME</b><br>Nama: <b>'+esc(h.hostname.split('.')[0])+'</b><br>Target: <b>'+esc(d.saasTarget)+'</b>'))+'</div><div class="text-amber-600 mt-2 font-sans"><i class="fas fa-triangle-exclamation"></i> Kalau domain di <b>Cloudflare</b>: set record <b>DNS only</b> (awan abu-abu), JANGAN Proxied — biar tak kena Error 1014.</div></div>';
+  var name=apex?'@':h.hostname;
+  var tipe=apex?'CNAME (flattening) / A-ALIAS':'CNAME';
+  return '<div class="text-xs text-gray-700 dark:text-gray-200 mt-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3"><div class="font-semibold mb-1">Set DNS ini di penyedia domain biar aktif:</div><div class="font-mono">'+
+    '<div class="py-0.5">Tipe: <b>'+tipe+'</b></div>'+dnsRow('Nama',name)+dnsRow('Target',d.saasTarget)+
+    '</div><div class="text-amber-600 mt-2 font-sans"><i class="fas fa-triangle-exclamation"></i> Kalau domain di <b>Cloudflare</b>: set record <b>DNS only</b> (awan abu-abu), JANGAN Proxied — biar tak kena Error 1014.</div></div>';
 }
 function webSectionHtml(d,id){
   var webHtml=(d.hostnames||[]).map(function(h){
