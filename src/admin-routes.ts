@@ -142,7 +142,7 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
     for (const k of str) if (b[k] !== undefined) patch[k] = String(b[k]);
     for (const k of ["dark_mode", "imap_tls", "imap_port", "email_limit", "delete_after_minutes"]) if (b[k] !== undefined) patch[k] = Number(b[k]);
     if (b.imap_pass) patch.imap_pass_enc = await encryptSecret(env, String(b.imap_pass));
-    if (patch.theme && !["default", "mantis", "nebula", "blueprint"].includes(patch.theme)) delete patch.theme;
+    if (patch.theme && !["default", "mantis", "nebula", "blueprint", "mobile"].includes(patch.theme)) delete patch.theme;
     if (patch.lang && !["id", "en"].includes(patch.lang)) delete patch.lang;
     await db.updateBuyerSettings(buyerId, patch);
     const st = await db.ensureBuyerSettings(buyerId);

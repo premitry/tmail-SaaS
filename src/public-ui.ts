@@ -73,10 +73,10 @@ function addrDropdown(boxCls: string, style = ""): string {
 
 export function renderPublicPage(o: PublicOpts): string {
   const c = o.colors;
-  const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : o.theme === "blueprint" ? "blueprint" : "sidebar";
+  const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : o.theme === "blueprint" ? "blueprint" : o.theme === "mobile" ? "mobile" : "sidebar";
   const logo = o.logoUrl || DEFAULT_LOGO;
   const favicon = o.faviconUrl || DEFAULT_LOGO;
-  const page = layout === "nebula" ? "bg-slate-950 text-gray-200" : "bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200";
+  const page = layout === "nebula" ? "bg-slate-950 text-gray-200" : layout === "mobile" ? "bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-200" : "bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200";
   const panelDisplay = (layout === "mantis" || layout === "blueprint") ? "flex" : "block";
   const heading = o.heroHeading || "Dapatkan Email Sementara dalam Sekejap";
   const subtitle = o.heroSubtitle || "Lindungi privasimu dengan inbox sekali pakai.";
@@ -190,16 +190,19 @@ export function renderPublicPage(o: PublicOpts): string {
   </div>
   <footer class="bg-gray-800 text-white text-sm px-6 pt-14 pb-6 text-center -mt-6">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>
 </div>`;
-  } else {
+  } else if (layout === "blueprint") {
     /* BLUEPRINT: retro cetak-biru, monospace, kartu krem border tebal */
     const gridBg = `background-color:${c.primary};background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:26px 26px`;
     const brandHtml = o.logoUrl ? `<img src="${esc(logo)}" class="max-h-9 object-contain" />` : `<div class="flex items-center gap-2"><div class="w-9 h-9 flex items-center justify-center rounded" style="border:2px solid ${c.primary}"><i class="fas fa-envelope-open-text" style="color:${c.primary}"></i></div><div class="text-2xl font-bold tracking-wide uppercase" style="color:${c.primary}">${esc(o.brand)}</div></div>`;
     bodyHtml = `
 <div class="bp-body min-h-screen p-4 md:p-8" style="${gridBg}">
   <div class="max-w-4xl mx-auto flex flex-col gap-5">
-    <div class="bp-card px-6 py-4 flex flex-col gap-3">
-      <div class="flex items-center justify-between gap-3">${brandHtml}<div class="flex items-center gap-3 text-sm" style="color:${c.primary}">${statusEl}${socials}</div></div>
-      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a>${o.hasFaq ? '<a href="/faq">FAQ</a>' : ""}${o.hasPrivacy ? '<a href="/privacy">PRIVACY</a>' : ""}${o.hasContact ? '<a href="/contact">CONTACT</a>' : ""}</nav>
+    <div class="bp-card px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+      ${brandHtml}
+      <div class="flex items-center gap-5">
+        <nav class="bp-nav flex gap-5 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs" target="_blank">API</a>${o.hasFaq ? '<a href="/faq">FAQ</a>' : ""}${o.hasPrivacy ? '<a href="/privacy">PRIVACY</a>' : ""}${o.hasContact ? '<a href="/contact">CONTACT</a>' : ""}</nav>
+        <div class="flex items-center gap-2 text-sm" style="color:${c.primary}">${statusEl}${socials}</div>
+      </div>
     </div>
     <div class="bp-card px-6 py-8">
       <h1 class="text-3xl md:text-4xl font-bold text-center mb-3" style="color:${c.primary}">${esc(heading)}</h1>
@@ -234,6 +237,52 @@ export function renderPublicPage(o: PublicOpts): string {
     </div>
     <footer class="text-center text-white text-sm py-2 font-bold" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">&copy; ${year} ${esc(o.brand)}</footer>
   </div>
+</div>`;
+  } else {
+    /* MOBILE: satu kolom, tombol besar ramah sentuh, header sticky */
+    const brandHtml = o.logoUrl
+      ? `<img src="${esc(logo)}" class="max-h-8 object-contain" />`
+      : `<div class="flex items-center gap-2"><span class="w-8 h-8 rounded-lg flex items-center justify-center text-white" style="background-color:${c.primary}"><i class="fas fa-envelope"></i></span><span class="font-bold text-lg" style="color:${c.primary}">${esc(o.brand)}</span></div>`;
+    const mAct = (a: string, i: string, l: string, cls = "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200", style = "") =>
+      `<button data-act="${a}" class="act flex flex-col items-center justify-center gap-1 py-3 rounded-xl active:scale-95 transition ${cls}"${style ? ` style="${style}"` : ""}><i class="${i} text-xl"></i><span class="text-[11px] font-medium">${l}</span></button>`;
+    bodyHtml = `
+<div class="min-h-screen flex flex-col max-w-md mx-auto w-full">
+  <header class="sticky top-0 z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-100 dark:border-gray-800 px-4 h-14 flex items-center justify-between">
+    ${brandHtml}
+    <div class="flex items-center gap-3">${statusEl}${darkBtn}</div>
+  </header>
+  <main class="flex-1 flex flex-col px-4 py-4 gap-4">
+    <div id="createPanel" class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 space-y-3">
+      <h1 class="text-lg font-bold text-center" style="color:${c.primary}">${esc(heading)}</h1>
+      <p class="text-center text-sm text-gray-500 dark:text-gray-400 mb-1">${esc(subtitle)}</p>
+      <input id="username" placeholder="username (opsional)" class="w-full rounded-xl py-3.5 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2" style="--tw-ring-color:${c.primary}" />
+      <div class="relative"><select id="domain" class="w-full rounded-xl py-3.5 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 appearance-none focus:outline-none cursor-pointer">${domainOptions}</select><i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"></i></div>
+      <button id="btnCreate" class="w-full rounded-xl py-3.5 text-white font-semibold active:scale-95 transition" style="background-color:${c.secondary}"><i class="fas fa-plus mr-1"></i> Buat Email</button>
+      <button id="btnRandom" class="w-full rounded-xl py-3.5 text-white font-semibold active:scale-95 transition" style="background-color:${c.tertiary}"><i class="fas fa-random mr-1"></i> Email Acak</button>
+      <button id="btnCancel" onclick="cancelCreate()" class="w-full rounded-xl py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-500 text-sm" style="display:none">Batal</button>
+    </div>
+    <div id="activePanel" class="hidden space-y-3">
+      <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 space-y-3">
+        <div class="text-xs text-gray-400 font-medium">Alamat email kamu</div>
+        ${addrDropdown("rounded-xl py-3.5 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 font-mono text-sm break-all")}
+        <div class="grid grid-cols-4 gap-2">
+          ${mAct("copy", "far fa-copy", "Salin", "text-white", "background-color:" + c.primary)}
+          ${mAct("refresh", "fas fa-sync-alt", "Refresh")}
+          ${mAct("share", "fas fa-share-nodes", "Bagikan")}
+          ${mAct("clear", "far fa-trash-alt", "Hapus", "bg-red-50 dark:bg-red-950/40 text-red-500")}
+        </div>
+        <button onclick="createAddr('')" class="w-full rounded-xl py-3 text-white font-semibold text-sm active:scale-95 transition" style="background-color:${c.secondary}"><i class="fas fa-plus mr-1"></i> Alamat Baru</button>
+      </div>
+    </div>
+    <div id="inboxWrap" class="flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden flex flex-col" style="display:none">
+      <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <span class="font-semibold text-sm" style="color:${c.primary}"><i class="fas fa-inbox mr-1"></i> Kotak Masuk</span>
+        <span class="text-xs bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-0.5 text-gray-500"><span id="inboxCount">0</span> email</span>
+      </div>
+      <div class="flex-1 flex flex-col">${inboxArea}</div>
+    </div>
+  </main>
+  <footer class="text-center text-xs text-gray-400 py-4">&copy; ${year} ${esc(o.brand)}</footer>
 </div>`;
   }
 

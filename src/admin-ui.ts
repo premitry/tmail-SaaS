@@ -375,10 +375,18 @@ function bpMock(){ var sec=(window.__S&&window.__S.color_secondary)||'#e07b1a'; 
     '<div style="background:#efe9dd;border:1.5px solid #16233f;border-radius:3px" class="px-2 py-1 flex items-center justify-between"><span style="color:#16233f;font-family:monospace;font-weight:800;font-size:8px">TEMPMAIL</span><span style="color:#16233f;font-size:6px;font-family:monospace;letter-spacing:1px">HOME API</span></div>'+
     '<div style="background:#efe9dd;border:1.5px solid #16233f;border-radius:3px" class="flex-1 p-1.5 flex flex-col gap-1"><div class="bg-white border" style="border-color:#16233f;height:9px"></div><div class="flex gap-1"><div class="flex-1" style="background:'+sec+';height:8px;border-radius:2px"></div><div style="background:#efe9dd;border:1px solid #16233f;width:18px;height:8px"></div><div style="background:#efe9dd;border:1px solid #16233f;width:18px;height:8px"></div></div><div class="flex gap-1 flex-1"><div class="flex-1 bg-white border" style="border-color:#16233f"></div><div class="flex-1 bg-white border" style="border-color:#16233f"></div></div></div>'+
   '</div></div>'; }
+function mobileMock(){ var p=(window.__S&&window.__S.color_primary)||'#4f46e5'; var sec=(window.__S&&window.__S.color_secondary)||'#4f46e5'; return '<div class="w-full h-32 flex items-center justify-center bg-gray-100 dark:bg-gray-700 py-2">'+
+  '<div class="bg-white dark:bg-gray-800 shadow-md flex flex-col gap-1 p-1.5" style="width:64px;height:110px;border-radius:9px">'+
+    '<div class="flex items-center justify-between px-0.5"><span style="color:'+p+';font-weight:800;font-size:6px">'+'✉ Mail</span><span style="color:#cbd5e1;font-size:6px">◐</span></div>'+
+    '<div style="background:#f1f5f9;border-radius:4px;height:9px"></div>'+
+    '<div style="background:'+sec+';border-radius:4px;height:11px"></div>'+
+    '<div class="grid grid-cols-4 gap-0.5">'+[p,'#e5e7eb','#e5e7eb','#fecaca'].map(function(x){return '<div style="background:'+x+';border-radius:3px;height:8px"></div>';}).join('')+'</div>'+
+    '<div class="flex-1 mt-0.5 flex flex-col gap-0.5">'+'<div style="background:#f1f5f9;border-radius:3px;flex:1"></div><div style="background:#f1f5f9;border-radius:3px;flex:1"></div></div>'+
+  '</div></div>'; }
 function renderThemeCards(){
   const cur=window.__S.theme;
-  const defs=[['default','Default','Sidebar kiri'],['mantis','Mantis','Bar atas · terang'],['nebula','Nebula','Bar atas · gelap'],['blueprint','Blueprint','Retro cetak-biru']];
-  $('#themeCards').innerHTML=defs.map(function(d){ var prev=window.THEME_PREVIEWS[d[0]]?'<img src="'+window.THEME_PREVIEWS[d[0]]+'" alt="'+d[1]+'" class="w-full h-32 object-cover object-top bg-gray-100 dark:bg-gray-700"/>':(d[0]==='blueprint'?bpMock():'<div class="w-full h-32 flex items-center justify-center text-white font-bold" style="font-family:monospace;background:#6b93d6">▦ '+d[1]+'</div>');
+  const defs=[['default','Default','Sidebar kiri'],['mantis','Mantis','Bar atas · terang'],['nebula','Nebula','Bar atas · gelap'],['blueprint','Blueprint','Retro cetak-biru'],['mobile','Mobile','Ramah HP · 1 kolom']];
+  $('#themeCards').innerHTML=defs.map(function(d){ var prev=window.THEME_PREVIEWS[d[0]]?'<img src="'+window.THEME_PREVIEWS[d[0]]+'" alt="'+d[1]+'" class="w-full h-32 object-cover object-top bg-gray-100 dark:bg-gray-700"/>':(d[0]==='blueprint'?bpMock():d[0]==='mobile'?mobileMock():'<div class="w-full h-32 flex items-center justify-center text-white font-bold" style="font-family:monospace;background:#6b93d6">▦ '+d[1]+'</div>');
     return '<button onclick="setTheme(\''+d[0]+'\')" class="text-left rounded-xl overflow-hidden border-2 '+(cur===d[0]?'border-indigo-500 ring-2 ring-indigo-200':'border-gray-200 dark:border-gray-700')+' hover:border-indigo-400 transition">'+prev+
     '<div class="px-2 py-1.5 bg-white dark:bg-gray-800"><div class="text-sm font-medium flex items-center gap-1">'+d[1]+(cur===d[0]?' <i class="fas fa-check-circle text-indigo-500 text-xs"></i>':'')+'</div><div class="text-[11px] text-gray-400">'+d[2]+'</div></div></button>'; }).join('');
 }
