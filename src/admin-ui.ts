@@ -292,6 +292,10 @@ async function vSettings(){
     '<div class="flex flex-wrap gap-6">'+colorField('g_c1','Warna Primer','Sidebar.',s.color_primary)+colorField('g_c2','Sekunder','Tombol Create.',s.color_secondary)+colorField('g_c3','Tersier','Tombol Random.',s.color_tertiary)+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
+  card('Tampilan Landing','Teks halaman depan web publik (dipakai tema Blueprint).',
+    field('Heading','Judul besar di tengah.',inp('h_head',s.hero_heading||''))+
+    field('Subtitle','Kalimat di bawah judul.',inp('h_sub',s.hero_subtitle||''))+
+    saveBtn('saveHero()'))+
   card('IMAP','Mailbox catch-all yang menerima email semua domainmu.',
     field('Host','mis. imap.domain.com',inp('i_host',s.imap_host))+
     '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+field('TLS','Implicit TLS.',toggle('i_tls',s.imap_tls,'993'))+'</div>'+
@@ -331,6 +335,7 @@ async function put(patch){ const r=await api('/settings',{method:'POST',body:JSO
 function readImg(inp,kind){ const f=inp.files[0]; if(!f)return; if(f.size>200000){ alert('Ukuran maksimal 200KB'); inp.value=''; return; } const r=new FileReader(); r.onload=()=>{ window.__img[kind]=r.result; const p=$('#'+kind+'Prev'); if(p)p.src=r.result; const n=$('#'+kind+'Note'); if(n){ n.className='text-xs text-green-600'; n.innerHTML='gambar custom · <button type="button" onclick="clearImg(\''+kind+'\')" class="text-red-600 underline">pakai bawaan</button>'; } }; r.readAsDataURL(f); }
 function clearImg(kind){ window.__img[kind]=''; const p=$('#'+kind+'Prev'); if(p)p.src=window.DEFAULT_LOGO; const n=$('#'+kind+'Note'); if(n){ n.className='text-xs text-gray-400'; n.innerHTML='bawaan TMail · <button type="button" onclick="clearImg(\''+kind+'\')" class="text-red-600 underline">pakai bawaan</button>'; } }
 function saveGeneral(){ put({brand_name:$('#g_brand').value,logo_url:window.__img.logo,favicon_url:window.__img.favicon,color_primary:$('#g_c1').value,color_secondary:$('#g_c2').value,color_tertiary:$('#g_c3').value,dark_mode:$('#g_dark').checked?1:0}); }
+function saveHero(){ put({hero_heading:$('#h_head').value,hero_subtitle:$('#h_sub').value}); }
 function imapPayload(){ return {imap_host:$('#i_host').value,imap_port:+$('#i_port').value,imap_user:$('#i_user').value,imap_tls:$('#i_tls').checked?1:0,imap_pass:$('#i_pass').value}; }
 function imapResult(cls,html){ var r=$('#imapTestResult'); if(r){ r.className='text-sm mt-2 '+cls; r.innerHTML=html; } }
 async function testImap(){ imapResult('text-gray-500','<i class="fas fa-spinner fa-spin"></i> Menguji koneksi…'); const res=await api('/settings/imap-test',{method:'POST',body:JSON.stringify(imapPayload())}); if(res.ok){ imapResult('text-green-600','<i class="fas fa-check-circle"></i> Berhasil konek ke IMAP'); } else { imapResult('text-red-600','<i class="fas fa-times-circle"></i> Gagal: '+esc(res.error||'tidak diketahui')); } return res.ok; }
@@ -355,10 +360,10 @@ function themeMini(theme){
 }
 function renderThemeCards(){
   const cur=window.__S.theme;
-  const defs=[['default','Default','Sidebar kiri'],['mantis','Mantis','Bar atas · terang'],['nebula','Nebula','Bar atas · gelap']];
-  $('#themeCards').innerHTML=defs.map(d=>'<button onclick="setTheme(\''+d[0]+'\')" class="text-left rounded-xl overflow-hidden border-2 '+(cur===d[0]?'border-indigo-500 ring-2 ring-indigo-200':'border-gray-200 dark:border-gray-700')+' hover:border-indigo-400 transition">'+
-    '<img src="'+(window.THEME_PREVIEWS[d[0]]||'')+'" alt="'+d[1]+'" class="w-full h-32 object-cover object-top bg-gray-100 dark:bg-gray-700"/>'+
-    '<div class="px-2 py-1.5 bg-white dark:bg-gray-800"><div class="text-sm font-medium flex items-center gap-1">'+d[1]+(cur===d[0]?' <i class="fas fa-check-circle text-indigo-500 text-xs"></i>':'')+'</div><div class="text-[11px] text-gray-400">'+d[2]+'</div></div></button>').join('');
+  const defs=[['default','Default','Sidebar kiri'],['mantis','Mantis','Bar atas · terang'],['nebula','Nebula','Bar atas · gelap'],['blueprint','Blueprint','Retro cetak-biru']];
+  $('#themeCards').innerHTML=defs.map(function(d){ var prev=window.THEME_PREVIEWS[d[0]]?'<img src="'+window.THEME_PREVIEWS[d[0]]+'" alt="'+d[1]+'" class="w-full h-32 object-cover object-top bg-gray-100 dark:bg-gray-700"/>':'<div class="w-full h-32 flex items-center justify-center text-white font-bold" style="font-family:monospace;background:#6b93d6;background-image:linear-gradient(rgba(255,255,255,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.3) 1px,transparent 1px);background-size:12px 12px">▦ '+d[1]+'</div>';
+    return '<button onclick="setTheme(\''+d[0]+'\')" class="text-left rounded-xl overflow-hidden border-2 '+(cur===d[0]?'border-indigo-500 ring-2 ring-indigo-200':'border-gray-200 dark:border-gray-700')+' hover:border-indigo-400 transition">'+prev+
+    '<div class="px-2 py-1.5 bg-white dark:bg-gray-800"><div class="text-sm font-medium flex items-center gap-1">'+d[1]+(cur===d[0]?' <i class="fas fa-check-circle text-indigo-500 text-xs"></i>':'')+'</div><div class="text-[11px] text-gray-400">'+d[2]+'</div></div></button>'; }).join('');
 }
 async function setTheme(theme){ window.__S.theme=theme; renderThemeCards(); await put({theme}); }
 function saveLock(){ put({lock_json:JSON.stringify({enable:$('#lk_on').checked,text:$('#lk_text').value,password:$('#lk_pass').value})}); }

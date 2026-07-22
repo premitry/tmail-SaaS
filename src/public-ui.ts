@@ -11,7 +11,18 @@ export interface PublicOpts {
   theme: string; domains: string[];
   socials: Array<{ icon: string; link: string }>;
   darkMode: boolean; lang: string;
+  heroHeading?: string; heroSubtitle?: string;
 }
+
+const BP_STYLE = `<style>
+.bp-body{font-family:ui-monospace,'Courier New',monospace}
+.bp-card{background:#efe9dd;border:2px solid #16233f;border-radius:6px;box-shadow:4px 4px 0 rgba(22,35,63,.35)}
+.bp-head{color:#fff;font-weight:700;letter-spacing:.05em;padding:10px 16px;border-bottom:2px solid #16233f}
+.bp-btn{background:#efe9dd;border:2px solid #16233f;border-radius:4px;padding:10px 14px;font-weight:700;letter-spacing:.03em;color:#16233f;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:14px}
+.bp-btn:hover{background:#e2dbc9}
+.bp-nav a{color:inherit;font-weight:700;letter-spacing:.08em}
+.bp-nav a:hover{text-decoration:underline}
+</style>`;
 
 // mode: sidebar | mantis | nebula
 function actBtns(mode: string): string {
@@ -43,16 +54,19 @@ function addrDropdown(boxCls: string, style = ""): string {
 
 export function renderPublicPage(o: PublicOpts): string {
   const c = o.colors;
-  const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : "sidebar";
+  const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : o.theme === "blueprint" ? "blueprint" : "sidebar";
   const logo = o.logoUrl || DEFAULT_LOGO;
   const favicon = o.faviconUrl || DEFAULT_LOGO;
   const page = layout === "nebula" ? "bg-slate-950 text-gray-200" : "bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200";
-  const panelDisplay = layout === "mantis" ? "flex" : "block";
+  const panelDisplay = (layout === "mantis" || layout === "blueprint") ? "flex" : "block";
+  const heading = o.heroHeading || "Dapatkan Email Sementara dalam Sekejap";
+  const subtitle = o.heroSubtitle || "Lindungi privasimu dengan inbox sekali pakai.";
+  const year = new Date().getFullYear();
 
   const socials = o.socials.map((s) =>
     `<a href="${esc(s.link)}" target="_blank" rel="noopener" class="ml-2 text-lg opacity-80 hover:opacity-100"><i class="${esc(s.icon)}"></i></a>`).join("");
   const domainOptions = o.domains.map((d) => `<option value="${esc(d)}" class="text-black">${esc(d)}</option>`).join("");
-  const config = JSON.stringify({ domains: o.domains, brand: o.brand, panelDisplay, twoPane: layout === "sidebar" });
+  const config = JSON.stringify({ domains: o.domains, brand: o.brand, panelDisplay, twoPane: layout === "sidebar" || layout === "blueprint" });
   const darkBtn = `<button onclick="toggleDark()" class="text-lg" title="Tema"><i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline text-yellow-400"></i></button>`;
   const statusEl = `<span id="statusDot" class="text-xs text-gray-400"><i class="fas fa-circle text-[8px]"></i> <span id="statusText">idle</span></span>`;
 
@@ -126,7 +140,7 @@ export function renderPublicPage(o: PublicOpts): string {
   </main>
   ${footer}
 </div>`;
-  } else {
+  } else if (layout === "nebula") {
     /* NEBULA: header berwarna + kartu inbox mengambang */
     bodyHtml = `
 <div class="min-h-screen flex flex-col">
@@ -157,9 +171,54 @@ export function renderPublicPage(o: PublicOpts): string {
   </div>
   <footer class="bg-gray-800 text-white text-sm px-6 pt-14 pb-6 text-center -mt-6">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>
 </div>`;
+  } else {
+    /* BLUEPRINT: retro cetak-biru, monospace, kartu krem border tebal */
+    const gridBg = `background-color:${c.primary};background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:26px 26px`;
+    const brandHtml = o.logoUrl ? `<img src="${esc(logo)}" class="max-h-9 object-contain" />` : `<div class="text-2xl font-bold tracking-wide" style="color:${c.primary}">${esc(o.brand)}</div>`;
+    bodyHtml = `
+<div class="bp-body min-h-screen p-4 md:p-8" style="${gridBg}">
+  <div class="max-w-4xl mx-auto flex flex-col gap-5">
+    <div class="bp-card px-6 py-4 flex flex-col gap-3">
+      <div class="flex items-center justify-between gap-3">${brandHtml}<div class="flex items-center gap-3 text-sm" style="color:${c.primary}">${statusEl}${socials}</div></div>
+      <nav class="bp-nav flex flex-wrap gap-x-6 gap-y-1 text-sm" style="color:${c.primary}"><a href="/">HOME</a><a href="/docs">API</a><a href="#">FAQ</a><a href="#">PRIVACY</a><a href="#">CONTACT</a></nav>
+    </div>
+    <div class="bp-card px-6 py-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-center mb-3" style="color:${c.primary}">${esc(heading)}</h1>
+      <p class="text-center mb-1" style="color:${c.primary}">${esc(subtitle)}</p>
+      <p class="text-center text-sm mb-6" style="color:${c.primary};opacity:.6">No signup · Free · Instant</p>
+      <div id="createPanel" class="flex flex-col sm:flex-row gap-3 justify-center" style="display:none">
+        <select id="domain" class="bp-btn" style="min-width:200px">${domainOptions}</select>
+        <button id="btnRandom" class="bp-btn" style="background:${c.secondary};color:#fff;border-color:${c.secondary}"><i class="fas fa-bolt"></i> GENERATE</button>
+      </div>
+      <div id="activePanel" class="flex-col gap-3" style="display:none">
+        <div class="flex flex-col md:flex-row gap-3">
+          <div class="flex-1">${addrDropdown("bp-card px-5 py-4 font-mono text-lg break-all !shadow-none", "background:#fff;color:" + c.primary)}</div>
+          <button data-act="copy" class="act bp-btn md:w-36"><i class="far fa-copy"></i> COPY</button>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button onclick="createAddr('')" class="bp-btn" style="background:${c.secondary};color:#fff;border-color:${c.secondary}"><i class="fas fa-sync-alt"></i> GENERATE NEW</button>
+          <button data-act="refresh" class="act bp-btn"><i class="fas fa-sync-alt"></i> REFRESH</button>
+          <button data-act="share" class="act bp-btn"><i class="fas fa-share-nodes"></i> SHARE</button>
+          <button data-act="clear" class="act bp-btn"><i class="far fa-trash-alt"></i> DELETE</button>
+        </div>
+      </div>
+    </div>
+    <div id="inboxWrap" class="grid md:grid-cols-2 gap-5" style="display:none">
+      <div class="bp-card p-0 overflow-hidden">
+        <div class="bp-head" style="background:${c.primary}">INBOX (<span id="inboxCount">0</span>)</div>
+        <div id="inboxList" class="min-h-[320px]"></div>
+      </div>
+      <div class="bp-card p-0 overflow-hidden flex flex-col">
+        <div class="bp-head" style="background:${c.primary}">PESAN</div>
+        <div id="msgView" class="min-h-[320px] flex flex-col"><div class="flex-1 flex items-center justify-center text-sm py-16" style="color:${c.primary};opacity:.5">Pilih email untuk dibaca</div></div>
+      </div>
+    </div>
+    <footer class="text-center text-white text-sm py-2 font-bold" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">&copy; ${year} ${esc(o.brand)}</footer>
+  </div>
+</div>`;
   }
 
-  return `${head(o.brand, "", favicon, layout === "nebula")}
+  return `${head(o.brand, layout === "blueprint" ? BP_STYLE : "", favicon, layout === "nebula")}
 <body class="${page}">
 ${bodyHtml}
 <script>
@@ -177,8 +236,8 @@ async function api(path, opts){ const r = await fetch(apiUrl(path), opts); retur
 const LD = CFG.panelDisplay || 'block';
 const TWO = !!CFG.twoPane;
 function setAddrText(){ var ab=$('#addrBox'); if(!ab) return; var sp=ab.querySelector('span'); if(sp){ sp.textContent=addr; } else { ab.textContent=addr; } }
-function showActive(){ $('#createPanel').style.display='none'; $('#activePanel').style.display=LD; setAddrText(); var iw=$('#inboxWrap'); if(iw) iw.style.display=''; }
-function showCreate(){ $('#activePanel').style.display='none'; $('#createPanel').style.display=LD; var iw=$('#inboxWrap'); if(iw) iw.style.display='none'; var cb=$('#btnCancel'); if(cb) cb.style.display = addrs.length ? '' : 'none'; closeAddrMenu(); }
+function showActive(){ var cp=$('#createPanel'); if(cp)cp.style.display='none'; var ap=$('#activePanel'); if(ap)ap.style.display=LD; setAddrText(); var iw=$('#inboxWrap'); if(iw) iw.style.display=''; }
+function showCreate(){ var cp=$('#createPanel'); if(!cp){ if(CFG.domains&&CFG.domains.length) createAddr(''); return; } var ap=$('#activePanel'); if(ap)ap.style.display='none'; cp.style.display=LD; var iw=$('#inboxWrap'); if(iw) iw.style.display='none'; var cb=$('#btnCancel'); if(cb) cb.style.display = addrs.length ? '' : 'none'; closeAddrMenu(); }
 function cancelCreate(){ if(addrs.length){ showActive(); loadInbox(); } }
 function renderAddrMenu(){ var m=$('#addrMenu'); if(!m) return; m.innerHTML = addrs.map(function(a){ return '<div onclick="setActiveAddr(\\''+a+'\\')" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-mono '+(a===addr?'font-bold':'')+'">'+escapeHtml(a)+'</div>'; }).join(''); }
 function toggleAddrMenu(){ renderAddrMenu(); var m=$('#addrMenu'); if(m) m.classList.toggle('hidden'); }
@@ -200,6 +259,7 @@ async function loadInbox(){
   const res = await api('/inbox?a=' + encodeURIComponent(addr));
   const list = $('#inboxList'); const msgs = res.messages || [];
   status(msgs.length + ' email', 'text-green-500');
+  var _ic=$('#inboxCount'); if(_ic) _ic.textContent=msgs.length;
   if(!msgs.length){ list.innerHTML = '<div class="h-40 flex items-center justify-center text-gray-400">Menunggu email masuk…</div>'; return; }
   if(TWO){
     list.innerHTML = msgs.map(function(m){ var nm=escapeHtml((String(m.sender||'').split('@')[0])||m.sender||''), em=escapeHtml(m.sender||'');
@@ -248,14 +308,15 @@ function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,
 function escapeAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
 function fallbackCopy(t){ var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length); var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); status(ok?'tersalin!':'gagal copy', ok?'text-green-500':'text-red-500'); }
 function copyText(t){ if(!t) return; if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(t).then(function(){ status('tersalin!','text-green-500'); }).catch(function(){ fallbackCopy(t); }); } else { fallbackCopy(t); } }
-$('#btnCreate').onclick = () => createAddr($('#username').value.trim());
-$('#btnRandom').onclick = () => createAddr('');
+var _bc=$('#btnCreate'); if(_bc) _bc.onclick = () => createAddr($('#username')?$('#username').value.trim():'');
+var _br=$('#btnRandom'); if(_br) _br.onclick = () => createAddr('');
 document.querySelectorAll('.act').forEach(b => b.onclick = () => {
   const a = b.dataset.act;
   if(a==='copy'){ copyText(addr); }
   if(a==='refresh'){ loadInbox(); }
   if(a==='new'){ showCreate(); }
   if(a==='clear'){ deleteAddr(); }
+  if(a==='share'){ if(navigator.share){ navigator.share({title:CFG.brand,text:addr}).catch(function(){}); } else copyText(addr); }
 });
 if(addr){ showActive(); loadInbox(); connectWS(); }
 else if(CFG.domains && CFG.domains.length){ createAddr(''); }  // belum ada alamat -> auto-generate

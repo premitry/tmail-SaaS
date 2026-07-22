@@ -93,6 +93,7 @@ export async function handlePublic(
       theme: st.theme, domains,
       socials: safeJson(st.socials_json, []),
       darkMode: st.dark_mode !== 0, lang: st.lang,
+      heroHeading: st.hero_heading, heroSubtitle: st.hero_subtitle,
     }));
   }
 

@@ -49,6 +49,8 @@ export interface BuyerSettings {
   theme: string;
   lang: string;
   dark_mode: number;
+  hero_heading: string;
+  hero_subtitle: string;
   email_limit: number;
   delete_after_minutes: number;
   socials_json: string;

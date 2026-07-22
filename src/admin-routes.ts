@@ -138,11 +138,11 @@ async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
   if (path === "/settings" && req.method === "POST") {
     const b = await body(req);
     const patch: any = {};
-    const str = ["brand_name", "logo_url", "favicon_url", "color_primary", "color_secondary", "color_tertiary", "theme", "lang", "imap_host", "imap_user", "socials_json", "lock_json"];
+    const str = ["brand_name", "logo_url", "favicon_url", "color_primary", "color_secondary", "color_tertiary", "theme", "lang", "imap_host", "imap_user", "socials_json", "lock_json", "hero_heading", "hero_subtitle"];
     for (const k of str) if (b[k] !== undefined) patch[k] = String(b[k]);
     for (const k of ["dark_mode", "imap_tls", "imap_port", "email_limit", "delete_after_minutes"]) if (b[k] !== undefined) patch[k] = Number(b[k]);
     if (b.imap_pass) patch.imap_pass_enc = await encryptSecret(env, String(b.imap_pass));
-    if (patch.theme && !["default", "mantis", "nebula"].includes(patch.theme)) delete patch.theme;
+    if (patch.theme && !["default", "mantis", "nebula", "blueprint"].includes(patch.theme)) delete patch.theme;
     if (patch.lang && !["id", "en"].includes(patch.lang)) delete patch.lang;
     await db.updateBuyerSettings(buyerId, patch);
     const st = await db.ensureBuyerSettings(buyerId);

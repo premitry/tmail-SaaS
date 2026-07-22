@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS buyer_settings (
   color_primary   TEXT NOT NULL DEFAULT '#1d4ed8',
   color_secondary TEXT NOT NULL DEFAULT '#14b8a6',
   color_tertiary  TEXT NOT NULL DEFAULT '#eab308',
-  theme         TEXT NOT NULL DEFAULT 'nebula', -- default | mantis | nebula
+  theme         TEXT NOT NULL DEFAULT 'nebula', -- default | mantis | nebula | blueprint
+  hero_heading  TEXT NOT NULL DEFAULT '',
+  hero_subtitle TEXT NOT NULL DEFAULT '',
   lang          TEXT NOT NULL DEFAULT 'id',      -- id | en
   dark_mode     INTEGER NOT NULL DEFAULT 1,
   email_limit   INTEGER NOT NULL DEFAULT 5,
