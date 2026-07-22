@@ -73,10 +73,10 @@ function addrDropdown(boxCls: string, style = ""): string {
 
 export function renderPublicPage(o: PublicOpts): string {
   const c = o.colors;
-  const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : o.theme === "blueprint" ? "blueprint" : o.theme === "mobile" ? "mobile" : "sidebar";
+  const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : o.theme === "blueprint" ? "blueprint" : "sidebar";
   const logo = o.logoUrl || DEFAULT_LOGO;
   const favicon = o.faviconUrl || DEFAULT_LOGO;
-  const page = layout === "nebula" ? "bg-slate-950 text-gray-200" : layout === "mobile" ? "bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-200" : "bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200";
+  const page = layout === "nebula" ? "bg-slate-950 text-gray-200" : "bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200";
   const panelDisplay = (layout === "mantis" || layout === "blueprint") ? "flex" : "block";
   const heading = o.heroHeading || "Dapatkan Email Sementara dalam Sekejap";
   const subtitle = o.heroSubtitle || "Lindungi privasimu dengan inbox sekali pakai.";
@@ -91,7 +91,7 @@ export function renderPublicPage(o: PublicOpts): string {
 
   const inboxArea = layout === "sidebar" ? `
     <div id="inboxList" class="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 min-h-[200px] lg:min-h-[440px] overflow-y-auto"></div>
-    <div id="msgView" class="w-full lg:w-2/3 min-h-[440px] flex flex-col"><div class="flex-1 flex items-center justify-center text-gray-300 dark:text-gray-600"><div class="text-center"><div class="text-5xl mb-3"><i class="far fa-envelope-open"></i></div><div>Pilih email untuk dibaca</div></div></div></div>` : `
+    <div id="msgView" class="msg-pane w-full lg:w-2/3 min-h-[440px] flex flex-col"><div class="flex-1 flex items-center justify-center text-gray-300 dark:text-gray-600"><div class="text-center"><div class="text-5xl mb-3"><i class="far fa-envelope-open"></i></div><div>Pilih email untuk dibaca</div></div></div></div>` : `
     <div id="inboxList" class="w-full min-h-[320px] divide-y divide-gray-100 dark:divide-gray-800"></div>
     <div id="msgView" class="w-full min-h-[320px] flex-col" style="display:none"></div>`;
 
@@ -190,7 +190,7 @@ export function renderPublicPage(o: PublicOpts): string {
   </div>
   <footer class="bg-gray-800 text-white text-sm px-6 pt-14 pb-6 text-center -mt-6">&copy; ${new Date().getFullYear()} ${esc(o.brand)}. All rights reserved.</footer>
 </div>`;
-  } else if (layout === "blueprint") {
+  } else {
     /* BLUEPRINT: retro cetak-biru, monospace, kartu krem border tebal */
     const gridBg = `background-color:${c.primary};background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:26px 26px`;
     const brandHtml = o.logoUrl ? `<img src="${esc(logo)}" class="max-h-9 object-contain" />` : `<div class="flex items-center gap-2"><div class="w-9 h-9 flex items-center justify-center rounded" style="border:2px solid ${c.primary}"><i class="fas fa-envelope-open-text" style="color:${c.primary}"></i></div><div class="text-2xl font-bold tracking-wide uppercase" style="color:${c.primary}">${esc(o.brand)}</div></div>`;
@@ -230,59 +230,13 @@ export function renderPublicPage(o: PublicOpts): string {
         <div class="bp-head" style="background:${c.primary}">INBOX (<span id="inboxCount">0</span>)</div>
         <div id="inboxList" class="min-h-[460px] max-h-[560px] overflow-y-auto"></div>
       </div>
-      <div class="bp-card p-0 overflow-hidden flex flex-col md:col-span-3">
+      <div class="msg-pane bp-card p-0 overflow-hidden flex flex-col md:col-span-3">
         <div class="bp-head" style="background:${c.primary}">PESAN</div>
         <div id="msgView" class="min-h-[460px] flex flex-col"><div class="flex-1 flex items-center justify-center text-sm py-16" style="color:${c.primary};opacity:.5">Pilih email untuk dibaca</div></div>
       </div>
     </div>
     <footer class="text-center text-white text-sm py-2 font-bold" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">&copy; ${year} ${esc(o.brand)}</footer>
   </div>
-</div>`;
-  } else {
-    /* MOBILE: satu kolom, tombol besar ramah sentuh, header sticky */
-    const brandHtml = o.logoUrl
-      ? `<img src="${esc(logo)}" class="max-h-8 object-contain" />`
-      : `<div class="flex items-center gap-2"><span class="w-8 h-8 rounded-lg flex items-center justify-center text-white" style="background-color:${c.primary}"><i class="fas fa-envelope"></i></span><span class="font-bold text-lg" style="color:${c.primary}">${esc(o.brand)}</span></div>`;
-    const mAct = (a: string, i: string, l: string, cls = "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200", style = "") =>
-      `<button data-act="${a}" class="act flex flex-col items-center justify-center gap-1 py-3 rounded-xl active:scale-95 transition ${cls}"${style ? ` style="${style}"` : ""}><i class="${i} text-xl"></i><span class="text-[11px] font-medium">${l}</span></button>`;
-    bodyHtml = `
-<div class="min-h-screen flex flex-col max-w-md mx-auto w-full">
-  <header class="sticky top-0 z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-100 dark:border-gray-800 px-4 h-14 flex items-center justify-between">
-    ${brandHtml}
-    <div class="flex items-center gap-3">${statusEl}${darkBtn}</div>
-  </header>
-  <main class="flex-1 flex flex-col px-4 py-4 gap-4">
-    <div id="createPanel" class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 space-y-3">
-      <h1 class="text-lg font-bold text-center" style="color:${c.primary}">${esc(heading)}</h1>
-      <p class="text-center text-sm text-gray-500 dark:text-gray-400 mb-1">${esc(subtitle)}</p>
-      <input id="username" placeholder="username (opsional)" class="w-full rounded-xl py-3.5 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2" style="--tw-ring-color:${c.primary}" />
-      <div class="relative"><select id="domain" class="w-full rounded-xl py-3.5 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 appearance-none focus:outline-none cursor-pointer">${domainOptions}</select><i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"></i></div>
-      <button id="btnCreate" class="w-full rounded-xl py-3.5 text-white font-semibold active:scale-95 transition" style="background-color:${c.secondary}"><i class="fas fa-plus mr-1"></i> Buat Email</button>
-      <button id="btnRandom" class="w-full rounded-xl py-3.5 text-white font-semibold active:scale-95 transition" style="background-color:${c.tertiary}"><i class="fas fa-random mr-1"></i> Email Acak</button>
-      <button id="btnCancel" onclick="cancelCreate()" class="w-full rounded-xl py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-500 text-sm" style="display:none">Batal</button>
-    </div>
-    <div id="activePanel" class="hidden space-y-3">
-      <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 space-y-3">
-        <div class="text-xs text-gray-400 font-medium">Alamat email kamu</div>
-        ${addrDropdown("rounded-xl py-3.5 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 font-mono text-sm break-all")}
-        <div class="grid grid-cols-4 gap-2">
-          ${mAct("copy", "far fa-copy", "Salin", "text-white", "background-color:" + c.primary)}
-          ${mAct("refresh", "fas fa-sync-alt", "Refresh")}
-          ${mAct("share", "fas fa-share-nodes", "Bagikan")}
-          ${mAct("clear", "far fa-trash-alt", "Hapus", "bg-red-50 dark:bg-red-950/40 text-red-500")}
-        </div>
-        <button onclick="createAddr('')" class="w-full rounded-xl py-3 text-white font-semibold text-sm active:scale-95 transition" style="background-color:${c.secondary}"><i class="fas fa-plus mr-1"></i> Alamat Baru</button>
-      </div>
-    </div>
-    <div id="inboxWrap" class="flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden flex flex-col" style="display:none">
-      <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-        <span class="font-semibold text-sm" style="color:${c.primary}"><i class="fas fa-inbox mr-1"></i> Kotak Masuk</span>
-        <span class="text-xs bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-0.5 text-gray-500"><span id="inboxCount">0</span> email</span>
-      </div>
-      <div class="flex-1 flex flex-col">${inboxArea}</div>
-    </div>
-  </main>
-  <footer class="text-center text-xs text-gray-400 py-4">&copy; ${year} ${esc(o.brand)}</footer>
 </div>`;
   }
 
@@ -347,24 +301,38 @@ async function loadInbox(){
       '<div class="hidden md:flex md:w-2/12 justify-end text-xs text-gray-500">'+fmtTime(m.received_at)+'</div></div>';
   }).join('');
 }
+function isMobile(){ return window.matchMedia('(max-width: 767px)').matches; }
 async function openMsg(id){
   currentId = id;
   const res = await api('/message?a=' + encodeURIComponent(addr) + '&id=' + id);
   if(res.error){ alert(res.error); return; }
   window.__mHtml = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
   window.__mRaw = 'From: '+(res.sender||'')+'\\nTo: '+addr+'\\nSubject: '+(res.subject||'')+'\\nDate: '+new Date(res.received_at).toLocaleString()+'\\n\\n'+(res.text||'(email format HTML — buka tab HTML)');
-  var mv=$('#msgView');
   var trash='<button onclick="delMsg(\\''+id+'\\')" title="Hapus email" class="text-red-600 hover:text-red-700 text-2xl"><i class="fas fa-trash"></i></button>';
-  var topRow = TWO ? '' : '<div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>';
-  mv.innerHTML = topRow+
-    '<div class="pl-4 pr-9 py-3 border-b border-dashed border-gray-200 dark:border-gray-700 font-mono text-xs relative">'+(TWO?'<div class="absolute top-2 right-3">'+trash+'</div>':'')+'<div style="display:grid;grid-template-columns:max-content 1fr;gap:3px 12px">'+
+  var metaGrid='<div style="display:grid;grid-template-columns:max-content 1fr;gap:3px 12px">'+
       '<span class="opacity-60">FROM:</span><span class="break-all">'+escapeHtml(res.sender)+'</span>'+
       '<span class="opacity-60">TO:</span><span class="break-all">'+escapeHtml(addr)+'</span>'+
       '<span class="opacity-60">DATE:</span><span>'+escapeHtml(new Date(res.received_at).toLocaleString())+'</span>'+
       '<span class="opacity-60">SUBJECT:</span><span class="break-words font-bold">'+escapeHtml(res.subject)+'</span>'+
-    '</div></div>'+
-    '<div id="msgBody" class="flex-1 flex flex-col overflow-auto min-h-[300px]"></div>'+
-    '<div class="flex border-t border-gray-200 dark:border-gray-800 text-sm font-semibold"><button id="tabHtml" onclick="msgTab(\\'html\\')" class="flex-1 py-2.5 text-center">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')" class="flex-1 py-2.5 text-center border-l border-gray-200 dark:border-gray-800">RAW</button></div>';
+    '</div>';
+  var bodyBlock='<div id="msgBody" class="flex-1 flex flex-col overflow-auto min-h-[300px]"></div>';
+  var tabs='<div class="flex border-t border-gray-200 dark:border-gray-800 text-sm font-semibold"><button id="tabHtml" onclick="msgTab(\\'html\\')" class="flex-1 py-2.5 text-center">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')" class="flex-1 py-2.5 text-center border-l border-gray-200 dark:border-gray-800">RAW</button></div>';
+  // HP: buka pesan full-screen (semua tema), biar ga numpuk & ada tombol kembali.
+  if(isMobile()){
+    var ov=document.getElementById('msgOv');
+    if(!ov){ ov=document.createElement('div'); ov.id='msgOv'; document.body.appendChild(ov); }
+    ov.className='fixed inset-0 z-50 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col';
+    ov.innerHTML='<div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>'+
+      '<div class="px-4 py-3 border-b border-dashed border-gray-200 dark:border-gray-700 font-mono text-xs">'+metaGrid+'</div>'+
+      bodyBlock+tabs;
+    ov.style.display='flex'; document.body.style.overflow='hidden';
+    msgTab('html'); loadInbox(); return;
+  }
+  var mv=$('#msgView');
+  var topRow = TWO ? '' : '<div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800"><button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali</button>'+trash+'</div>';
+  mv.innerHTML = topRow+
+    '<div class="pl-4 pr-9 py-3 border-b border-dashed border-gray-200 dark:border-gray-700 font-mono text-xs relative">'+(TWO?'<div class="absolute top-2 right-3">'+trash+'</div>':'')+metaGrid+'</div>'+
+    bodyBlock+tabs;
   if(!TWO){ $('#inboxList').style.display='none'; }
   mv.style.display='flex';
   msgTab('html');
@@ -372,7 +340,7 @@ async function openMsg(id){
 }
 function renderMsgBody(mode){ var b=$('#msgBody'); if(!b) return; if(mode==='raw'){ b.innerHTML='<pre style="white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;padding:14px;font-size:12px;margin:0">'+escapeHtml(window.__mRaw||'')+'</pre>'; } else { b.innerHTML='<iframe class="flex-1 w-full bg-white" style="min-height:340px" sandbox="allow-same-origin" srcdoc="'+escapeAttr(window.__mHtml||'')+'"></iframe>'; } }
 function msgTab(mode){ renderMsgBody(mode); var h=$('#tabHtml'),r=$('#tabRaw'); if(h){ h.style.background=mode==='html'?'rgba(0,0,0,.06)':''; } if(r){ r.style.background=mode==='raw'?'rgba(0,0,0,.06)':''; } }
-function backToList(){ var mv=$('#msgView'); if(mv) mv.style.display='none'; var l=$('#inboxList'); if(l) l.style.display=''; }
+function backToList(){ var ov=document.getElementById('msgOv'); if(ov){ ov.style.display='none'; } document.body.style.overflow=''; var mv=$('#msgView'); if(mv) mv.style.display='none'; var l=$('#inboxList'); if(l) l.style.display=''; }
 function deleteAddr(){ if(!addr) return; if(!confirm('Hapus alamat '+addr+' dari daftar?')) return; addrs=addrs.filter(function(x){return x!==addr;}); localStorage.setItem(LKEY, JSON.stringify(addrs)); if(addrs.length){ setActiveAddr(addrs[0]); } else { addr=''; localStorage.removeItem(AKEY); showCreate(); } }
 async function delMsg(id){ await api('/delete?a=' + encodeURIComponent(addr) + '&id=' + id, { method:'POST' }); backToList(); loadInbox(); }
 function connectWS(){

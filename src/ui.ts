@@ -25,6 +25,7 @@ export function head(title: string, extra = "", faviconHref = "/favicon.svg", de
   function disableDarkMode(){document.documentElement.classList.remove('dark');localStorage.setItem('darkmode','disabled');}
   function toggleDark(){document.documentElement.classList.contains('dark')?disableDarkMode():enableDarkMode();}
 </script>
+<style>@media (max-width:767px){.msg-pane{display:none!important}}</style>
 ${extra}
 </head>`;
 }
