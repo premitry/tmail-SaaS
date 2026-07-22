@@ -46,25 +46,38 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
   }
 
   if (!routed.length) {
-    // Nggak cocok ke buyer. Cek: email verifikasi Cloudflare (destination address)?
-    // Auto-klik biar buyer nggak usah manual verify.
     const fromAddr = String(parsed.from?.address || message.from || "").toLowerCase();
     const subject = String(parsed.subject || "").toLowerCase();
+
+    // 1. Auto-verifikasi email Cloudflare (destination address).
     const looksCf = fromAddr.includes("cloudflare.com") || subject.includes("verify your email") || subject.includes("cloudflare");
     if (looksCf) {
       const body = String(parsed.text || parsed.html || "");
-      // URL verifikasi CF: https://mailchannels.cloudflare.com/... atau dash.cloudflare.com/email/routing/verify?token=...
       const urls = body.match(/https?:\/\/[^\s"'<>]+/g) || [];
       const verifyUrl = urls.find((u) => /cloudflare\.com/i.test(u) && /verify|token=/i.test(u));
       if (verifyUrl) {
         try { const r = await fetch(verifyUrl, { method: "GET", redirect: "follow" }); console.log("auto-verify CF:", verifyUrl.slice(0, 80), "→", r.status); }
         catch (e) { console.log("auto-verify gagal:", (e as Error).message); }
-      } else {
-        console.log("email verifikasi CF terdeteksi tapi URL tidak ditemukan. From=" + fromAddr);
+        return;
+      }
+    }
+
+    // 2. Email ke apex zona (mis. *@imapku.icu) → simpan ke Mail Hub.
+    const saasZone = (env.SAAS_ZONE || "").toLowerCase();
+    const hubRcpts = recipients.filter((r) => r.endsWith("@" + saasZone));
+    if (saasZone && hubRcpts.length) {
+      const text = parsed.text || "";
+      const html = parsed.html || "";
+      const preview = String(text || html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim().slice(0, 140);
+      const from = fromAddr || message.from || "unknown";
+      const subj = parsed.subject || "(tanpa subjek)";
+      for (const to of hubRcpts) {
+        try { await db.logHubMessage(to, from, subj, preview, html, text); } catch (e) { console.log("hub log err:", (e as Error).message); }
       }
       return;
     }
-    console.log("email masuk: tidak ada domain buyer yang cocok. To=" + message.to + " From=" + fromAddr);
+
+    console.log("email masuk: tidak ada domain buyer/hub yang cocok. To=" + message.to + " From=" + fromAddr);
     return;
   }
 

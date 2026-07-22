@@ -23,3 +23,15 @@ UPDATE buyer_settings SET theme='nebula' WHERE theme='default';
 
 -- Deteksi Email Routing aktif: timestamp email terakhir yg masuk via email() handler CF.
 ALTER TABLE buyer_settings ADD COLUMN last_worker_email_at INTEGER NOT NULL DEFAULT 0;
+
+-- Mail Hub (root imapku.icu) — settings global (retention, dll).
+CREATE TABLE IF NOT EXISTS platform_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('hub_retention_days', '7');
+INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('hub_brand', 'Mail Hub');
+
+-- Kolom flag: email masuk ke domain milik OWNER (bukan buyer) — dipisah supaya Mail Hub tampilin catch-all imapku.icu.
+ALTER TABLE messages ADD COLUMN is_hub INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_messages_hub ON messages(is_hub, received_at);

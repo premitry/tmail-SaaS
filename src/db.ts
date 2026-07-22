@@ -134,6 +134,53 @@ export class DB {
       .bind(Date.now(), buyerId).run();
   }
 
+  /* ─────────── Mail Hub (root imapku.icu) ─────────── */
+  async platformGet(key: string, fallback = ""): Promise<string> {
+    const r = await this.d1.prepare(`SELECT value FROM platform_settings WHERE key = ?`)
+      .bind(key).first<{ value: string }>();
+    return r?.value ?? fallback;
+  }
+  async platformSet(key: string, value: string): Promise<void> {
+    await this.d1.prepare(`INSERT INTO platform_settings (key,value) VALUES (?,?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value`).bind(key, value).run();
+  }
+  async logHubMessage(to: string, from: string, subject: string, preview: string, html: string, text: string): Promise<void> {
+    await this.d1.prepare(
+      `INSERT INTO messages (id, buyer_id, to_addr, from_addr, subject, preview, html, text, received_at, seen, is_hub)
+       VALUES (?, '', ?, ?, ?, ?, ?, ?, ?, 0, 1)`)
+      .bind(uid(), to, from, subject, preview, html, text, Date.now()).run();
+  }
+  async listHubMessages(q: string, limit: number, offset: number): Promise<{ rows: any[]; total: number }> {
+    const like = "%" + q.trim() + "%";
+    const where = q.trim()
+      ? `is_hub = 1 AND (subject LIKE ? OR from_addr LIKE ? OR to_addr LIKE ? OR preview LIKE ?)`
+      : `is_hub = 1`;
+    const args = q.trim() ? [like, like, like, like] : [];
+    const total = await this.d1.prepare(`SELECT COUNT(*) AS c FROM messages WHERE ${where}`).bind(...args).first<{ c: number }>();
+    const rows = await this.d1.prepare(
+      `SELECT id, to_addr, from_addr, subject, preview, received_at, seen FROM messages WHERE ${where} ORDER BY received_at DESC LIMIT ? OFFSET ?`)
+      .bind(...args, limit, offset).all();
+    return { rows: rows.results ?? [], total: total?.c ?? 0 };
+  }
+  async getHubMessage(id: string): Promise<any | null> {
+    return await this.d1.prepare(`SELECT * FROM messages WHERE id = ? AND is_hub = 1`).bind(id).first();
+  }
+  async deleteHubMessage(id: string): Promise<void> {
+    await this.d1.prepare(`DELETE FROM messages WHERE id = ? AND is_hub = 1`).bind(id).run();
+  }
+  async markHubSeen(id: string): Promise<void> {
+    await this.d1.prepare(`UPDATE messages SET seen = 1 WHERE id = ? AND is_hub = 1`).bind(id).run();
+  }
+  async gcHubMessages(retentionDays: number): Promise<void> {
+    if (!retentionDays || retentionDays < 1) return;
+    const cutoff = Date.now() - retentionDays * 86_400_000;
+    await this.d1.prepare(`DELETE FROM messages WHERE is_hub = 1 AND received_at < ?`).bind(cutoff).run();
+  }
+  async countHubNew(): Promise<number> {
+    const r = await this.d1.prepare(`SELECT COUNT(*) AS c FROM messages WHERE is_hub = 1 AND seen = 0`).first<{ c: number }>();
+    return r?.c ?? 0;
+  }
+
   /* ─────────── domains ─────────── */
   async listDomains(buyerId: string): Promise<DomainRow[]> {
     const r = await this.d1.prepare(`SELECT * FROM domains WHERE buyer_id = ? ORDER BY created_at DESC`)

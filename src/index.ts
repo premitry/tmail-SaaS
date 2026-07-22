@@ -7,6 +7,7 @@ import { handleAdmin } from "./admin-routes";
 import { handlePublic } from "./public-routes";
 import { pingAllWatchers } from "./watcher";
 import { handleIncomingEmail } from "./email-in";
+import { handleMailHub } from "./mail-hub";
 
 export { Mailbox } from "./mailbox";
 export { Watcher } from "./watcher";
@@ -19,6 +20,12 @@ export default {
     if (!booted) { booted = true; try { await db.bootstrapOwner(env); } catch { /* ignore */ } }
 
     const url = new URL(req.url);
+
+    // Mail Hub: host === apex SAAS_ZONE (mis. imapku.icu). Beda dari panel (PLATFORM_HOST=panel.imapku.icu).
+    const host = (req.headers.get("host") || "").toLowerCase().split(":")[0];
+    const apex = (env.SAAS_ZONE || "").toLowerCase();
+    if (apex && host === apex) return handleMailHub(req, url, env, db);
+
     const tenant = await resolveTenant(req, url, env, db);
 
     // /admin* ditangani berbasis sesi (lintas host).
@@ -33,8 +40,12 @@ export default {
     ctx.waitUntil((async () => {
       try { await db.expireOverdue(); } catch (e) { console.log("expire err", (e as Error).message); }
       try { await db.gcAllMessages(); } catch (e) { console.log("gc err", (e as Error).message); }
+      // GC Mail Hub sesuai retention setting.
+      try {
+        const n = parseInt(await db.platformGet("hub_retention_days", "7"), 10);
+        if (!isNaN(n) && n > 0) await db.gcHubMessages(n);
+      } catch (e) { console.log("hub gc err", (e as Error).message); }
       // Kompat: masih ping Watcher buat buyer yang mau pakai IMAP (opsional).
-      // Buyer full-CF nggak spin DO ini (guard di public-routes).
       try { await pingAllWatchers(env); } catch (e) { console.log("poll err", (e as Error).message); }
     })());
   },
