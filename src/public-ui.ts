@@ -193,7 +193,7 @@ export function renderPublicPage(o: PublicOpts): string {
   } else {
     /* BLUEPRINT: retro cetak-biru, monospace, kartu krem border tebal */
     const gridBg = `background-color:${c.primary};background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:26px 26px`;
-    const brandHtml = o.logoUrl ? `<img src="${esc(logo)}" class="max-h-9 object-contain" />` : `<div class="text-2xl font-bold tracking-wide" style="color:${c.primary}">${esc(o.brand)}</div>`;
+    const brandHtml = o.logoUrl ? `<img src="${esc(logo)}" class="max-h-9 object-contain" />` : `<div class="flex items-center gap-2"><div class="w-9 h-9 flex items-center justify-center rounded" style="border:2px solid ${c.primary}"><i class="fas fa-envelope-open-text" style="color:${c.primary}"></i></div><div class="text-2xl font-bold tracking-wide uppercase" style="color:${c.primary}">${esc(o.brand)}</div></div>`;
     bodyHtml = `
 <div class="bp-body min-h-screen p-4 md:p-8" style="${gridBg}">
   <div class="max-w-4xl mx-auto flex flex-col gap-5">
@@ -302,17 +302,22 @@ async function openMsg(id){
   currentId = id;
   const res = await api('/message?a=' + encodeURIComponent(addr) + '&id=' + id);
   if(res.error){ alert(res.error); return; }
-  const body = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
+  window.__mHtml = res.html ? res.html : '<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px">'+escapeHtml(res.text||'')+'</pre>';
+  window.__mRaw = 'From: '+(res.sender||'')+'\\nTo: '+addr+'\\nSubject: '+(res.subject||'')+'\\nDate: '+new Date(res.received_at).toLocaleString()+'\\n\\n'+(res.text||'(email format HTML — buka tab HTML)');
   var mv=$('#msgView');
   var backBtn = TWO ? '<span></span>' : '<button onclick="backToList()" class="text-sm text-gray-600 dark:text-gray-300 hover:underline"><i class="fas fa-chevron-left mr-1"></i>Kembali ke Inbox</button>';
   mv.innerHTML = '<div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">'+backBtn+
       '<button onclick="delMsg(\\''+id+'\\')" class="text-xs bg-red-600 text-white px-3 py-1 rounded-md">Delete</button></div>'+
     '<div class="p-4 border-b border-dashed border-gray-200 dark:border-gray-700"><div class="text-base text-gray-900 dark:text-gray-100">'+escapeHtml(res.subject)+'</div><div class="text-xs text-gray-400">'+escapeHtml(res.sender)+' · '+fmtTime(res.received_at)+'</div></div>'+
-    '<iframe class="flex-1 w-full bg-white min-h-[360px]" sandbox="allow-same-origin" srcdoc="'+escapeAttr(body)+'"></iframe>';
+    '<div id="msgBody" class="flex-1 flex flex-col overflow-auto min-h-[300px]"></div>'+
+    '<div class="flex border-t border-gray-200 dark:border-gray-800 text-sm font-semibold"><button id="tabHtml" onclick="msgTab(\\'html\\')" class="flex-1 py-2.5 text-center">HTML</button><button id="tabRaw" onclick="msgTab(\\'raw\\')" class="flex-1 py-2.5 text-center border-l border-gray-200 dark:border-gray-800">RAW</button></div>';
   if(!TWO){ $('#inboxList').style.display='none'; }
   mv.style.display='flex';
+  msgTab('html');
   loadInbox();
 }
+function renderMsgBody(mode){ var b=$('#msgBody'); if(!b) return; if(mode==='raw'){ b.innerHTML='<pre style="white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;padding:14px;font-size:12px;margin:0">'+escapeHtml(window.__mRaw||'')+'</pre>'; } else { b.innerHTML='<iframe class="flex-1 w-full bg-white" style="min-height:340px" sandbox="allow-same-origin" srcdoc="'+escapeAttr(window.__mHtml||'')+'"></iframe>'; } }
+function msgTab(mode){ renderMsgBody(mode); var h=$('#tabHtml'),r=$('#tabRaw'); if(h){ h.style.background=mode==='html'?'rgba(0,0,0,.06)':''; } if(r){ r.style.background=mode==='raw'?'rgba(0,0,0,.06)':''; } }
 function backToList(){ var mv=$('#msgView'); if(mv) mv.style.display='none'; var l=$('#inboxList'); if(l) l.style.display=''; }
 function deleteAddr(){ if(!addr) return; if(!confirm('Hapus alamat '+addr+' dari daftar?')) return; addrs=addrs.filter(function(x){return x!==addr;}); localStorage.setItem(LKEY, JSON.stringify(addrs)); if(addrs.length){ setActiveAddr(addrs[0]); } else { addr=''; localStorage.removeItem(AKEY); showCreate(); } }
 async function delMsg(id){ await api('/delete?a=' + encodeURIComponent(addr) + '&id=' + id, { method:'POST' }); backToList(); loadInbox(); }
