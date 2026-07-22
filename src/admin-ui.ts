@@ -6,7 +6,7 @@ import { DEFAULT_LOGO, THEME_PREVIEWS } from "./assets";
 const HUB_SKIN = `
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;font:13px/1.45 Tahoma,"Segoe UI",Arial,sans-serif;color:#000;background-color:#008080;background-image:linear-gradient(45deg,rgba(0,0,0,.10) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.10) 75%),linear-gradient(45deg,rgba(0,0,0,.10) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.10) 75%);background-size:28px 28px;background-position:0 0,14px 14px;background-attachment:fixed}
+body{margin:0;font:13px/1.45 Tahoma,"Segoe UI",Arial,sans-serif;color:#000;background-color:#7cbec9;background-image:linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px);background-size:50px 50px;background-attachment:fixed}
 a{color:#000080;text-decoration:none}
 a:hover{text-decoration:underline}
 .muted{color:#404040}
