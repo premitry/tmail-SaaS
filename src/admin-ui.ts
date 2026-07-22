@@ -6,14 +6,14 @@ export function renderLogin(brand: string, role: "owner" | "buyer", error = ""):
   const title = role === "owner" ? "Owner Panel" : brand + " Admin";
   return `${head(title + " — Login", '<style>html:not(.dark) body{background-color:#e4e6eb}html:not(.dark) .bg-white{background-color:#f4f5f7!important}html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}</style>')}
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex items-center justify-center px-4">
-  <form id="f" class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 space-y-4">
+  <form id="f" class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 space-y-4">
     <div class="text-center">
       <div class="text-4xl mb-2">${role === "owner" ? "🛡️" : "📮"}</div>
       <h1 class="text-xl font-bold">${esc(title)}</h1>
     </div>
     <div id="loginErr" class="hidden bg-red-100 text-red-700 text-sm p-3 rounded-lg text-center">${error ? esc(error) : ""}</div>
-    <input name="email" type="text" placeholder="Email atau username" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-    <input name="password" type="password" placeholder="Password" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <input name="email" type="text" placeholder="Email atau username" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <input name="password" type="password" placeholder="Password" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
     <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg">Masuk</button>
   </form>
   <script>
@@ -59,12 +59,12 @@ export function renderAdminShell(brand: string): string {
   return `${head(brand + " — Admin", SB_STYLE)}
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 <div class="flex min-h-screen">
-  <aside id="sb" class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 z-30">
-    <div class="h-16 flex items-center gap-2 px-4 border-b border-gray-200 dark:border-gray-800 font-bold text-lg overflow-hidden">
+  <aside id="sb" class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col fixed inset-y-0 z-30">
+    <div class="h-16 flex items-center gap-2 px-4 border-b border-gray-200 dark:border-gray-700 font-bold text-lg overflow-hidden">
       <span class="text-2xl">📮</span><span id="brandName" class="truncate">${esc(brand)}</span>
     </div>
     <nav id="nav" class="flex-1 p-3 space-y-1 text-sm"></nav>
-    <div class="p-3 border-t border-gray-200 dark:border-gray-800 text-sm relative">
+    <div class="p-3 border-t border-gray-200 dark:border-gray-700 text-sm relative">
       <button id="userBtn" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
         <i class="fas fa-user-circle text-lg"></i><span id="userName" class="truncate">-</span>
       </button>
@@ -76,7 +76,7 @@ export function renderAdminShell(brand: string): string {
   </aside>
   <div id="sbBackdrop" onclick="closeDrawer()" class="fixed inset-0 bg-black/40 z-20"></div>
   <main class="flex-1 md:ml-60 min-w-0">
-    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 px-4 md:px-5 sticky top-0 z-10">
+    <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3 px-4 md:px-5 sticky top-0 z-10">
       <button onclick="toggleSidebar()" title="Menu / kecilkan sidebar" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fas fa-bars"></i></button>
       <div class="ml-auto"></div>
       <button onclick="toggleDark()" title="Tema gelap/terang" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg">
@@ -122,15 +122,15 @@ function closeDrawer(){ document.body.classList.remove('sb-open'); }
 if(localStorage.getItem('sbc')==='1') document.body.classList.add('sbc');
 
 /* ---- komponen kecil ---- */
-const INP = 'w-full max-w-md rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500';
+const INP = 'w-full max-w-md rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500';
 function inp(id,val,type,ph){ return '<input id="'+id+'" type="'+(type||'text')+'" '+(ph?'placeholder="'+esc(ph)+'" ':'')+'value="'+esc(val)+'" class="'+INP+'"/>'; }
 function field(label,desc,inner){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label>'+(desc?'<p class="text-xs text-gray-400 mb-1.5">'+desc+'</p>':'<div class="mb-1.5"></div>')+inner+'</div>'; }
-function ta(id,val){ return '<textarea id="'+id+'" rows="4" class="w-full max-w-xl rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3 text-sm">'+esc(val||'')+'</textarea>'; }
-function colorField(id,label,desc,val){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label><p class="text-xs text-gray-400 mb-1.5">'+desc+'</p><div class="flex items-center gap-2"><input id="'+id+'" type="color" value="'+esc(val)+'" oninput="var t=document.getElementById(\''+id+'_t\');if(t)t.value=this.value" class="w-12 h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-white dark:bg-gray-800"/><input id="'+id+'_t" type="text" value="'+esc(val)+'" maxlength="7" placeholder="#000000" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){document.getElementById(\''+id+'\').value=this.value;}" class="w-24 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></div></div>'; }
-function card(title,desc,inner){ return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-5"><h3 class="font-semibold">'+title+'</h3>'+(desc?'<p class="text-xs text-gray-400 mb-4">'+desc+'</p>':'<div class="mb-4"></div>')+inner+'</div>'; }
+function ta(id,val){ return '<textarea id="'+id+'" rows="4" class="w-full max-w-xl rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3 text-sm">'+esc(val||'')+'</textarea>'; }
+function colorField(id,label,desc,val){ return '<div class="mb-4"><label class="block text-sm font-medium">'+label+'</label><p class="text-xs text-gray-400 mb-1.5">'+desc+'</p><div class="flex items-center gap-2"><input id="'+id+'" type="color" value="'+esc(val)+'" oninput="var t=document.getElementById(\''+id+'_t\');if(t)t.value=this.value" class="w-12 h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-white dark:bg-gray-800"/><input id="'+id+'_t" type="text" value="'+esc(val)+'" maxlength="7" placeholder="#000000" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){document.getElementById(\''+id+'\').value=this.value;}" class="w-24 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></div></div>'; }
+function card(title,desc,inner){ return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-5"><h3 class="font-semibold">'+title+'</h3>'+(desc?'<p class="text-xs text-gray-400 mb-4">'+desc+'</p>':'<div class="mb-4"></div>')+inner+'</div>'; }
 function saveBtn(fn){ return '<button onclick="'+fn+'" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg mt-1">Simpan</button>'; }
 function toggle(id,checked,label){ return '<label class="inline-flex items-center gap-3 cursor-pointer"><input id="'+id+'" type="checkbox" class="sr-only peer" '+(checked?'checked':'')+'/><span class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-checked:bg-indigo-600 rounded-full relative transition-colors after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></span>'+(label?'<span class="text-sm">'+label+'</span>':'')+'</label>'; }
-function openModal(inner,wide){ $('#modalRoot').innerHTML = '<div class="fixed inset-0 bg-black/50 z-40 flex items-start justify-center p-4 overflow-y-auto"><div class="bg-white dark:bg-gray-800 w-full '+(wide?'max-w-2xl':'max-w-md')+' rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 mt-12 relative"><button onclick="closeModal()" title="Tutup (Esc)" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-2xl leading-none">&times;</button>'+inner+'</div></div>'; }
+function openModal(inner,wide){ $('#modalRoot').innerHTML = '<div class="fixed inset-0 bg-black/50 z-40 flex items-start justify-center p-4 overflow-y-auto"><div class="bg-white dark:bg-gray-800 w-full '+(wide?'max-w-2xl':'max-w-md')+' rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 mt-12 relative"><button onclick="closeModal()" title="Tutup (Esc)" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-2xl leading-none">&times;</button>'+inner+'</div></div>'; }
 function closeModal(){ $('#modalRoot').innerHTML=''; }
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
 
@@ -187,16 +187,16 @@ function chartSVG(series,H,days){
 /* ============ DASHBOARD ============ */
 async function vDashboard(){
   view.innerHTML='<h1 class="text-2xl font-bold mb-6">Dashboard</h1><div id="myWebDomain"></div><div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>'+
-    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5">'+
+    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">'+
       '<div class="flex items-center justify-between mb-1"><h3 class="font-semibold">Aktivitas</h3>'+
-        '<select id="daySel" onchange="loadChart(this.value)" class="text-sm rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">'+
+        '<select id="daySel" onchange="loadChart(this.value)" class="text-sm rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">'+
           '<option value="7">7 hari</option><option value="14" selected>14 hari</option><option value="30">30 hari</option><option value="60">60 hari</option><option value="90">90 hari</option>'+
         '</select></div>'+
       '<p class="text-xs text-gray-400 mb-3">Jumlah email dibuat & pesan diterima per hari.</p>'+
       '<div id="chartBody" class="text-gray-400 text-sm py-10 text-center">Memuat…</div></div>';
   const d=await api('/dashboard');
   const cards=[['Email dibuat',d.emails,'fa-at','text-indigo-600'],['Pesan diterima',d.messages,'fa-inbox','text-green-600'],['Domain',d.domains,'fa-globe','text-purple-600'],['Hari ini',(d.series&&d.series.length?d.series[d.series.length-1].messages_received:0),'fa-bolt','text-amber-600']];
-  $('#cards').innerHTML=cards.map(c=>'<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5"><div class="'+c[3]+' text-xl mb-2"><i class="fas '+c[2]+'"></i></div><div class="text-3xl font-bold">'+(c[1]||0)+'</div><div class="text-sm text-gray-500 mt-1">'+c[0]+'</div></div>').join('');
+  $('#cards').innerHTML=cards.map(c=>'<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"><div class="'+c[3]+' text-xl mb-2"><i class="fas '+c[2]+'"></i></div><div class="text-3xl font-bold">'+(c[1]||0)+'</div><div class="text-sm text-gray-500 mt-1">'+c[0]+'</div></div>').join('');
   $('#chartBody').innerHTML=chartSVG(d.series,null,14);
   loadMyWebDomain();
 }
@@ -211,7 +211,7 @@ async function loadMyWebDomain(){
     var btn=(active||isSub)?'':'<div class="mt-1"><button onclick="refreshMyDomain(\''+h.id+'\')" class="text-xs text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button></div>';
     return '<div class="mb-2 last:mb-0"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dnsHint(h,d)+btn+'</div>';
   }).join('');
-  box.innerHTML='<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6"><h3 class="font-semibold mb-1"><i class="fas fa-globe mr-1 text-indigo-500"></i>Domain Web Kamu</h3><p class="text-xs text-gray-400 mb-3">Alamat buat akses situs & dashboard (/admin) kamu.</p>'+items+'</div>';
+  box.innerHTML='<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6"><h3 class="font-semibold mb-1"><i class="fas fa-globe mr-1 text-indigo-500"></i>Domain Web Kamu</h3><p class="text-xs text-gray-400 mb-3">Alamat buat akses situs & dashboard (/admin) kamu.</p>'+items+'</div>';
   scheduleWebPoll();
 }
 function scheduleWebPoll(){ clearTimeout(window.__wp); window.__wp=setTimeout(function(){ if(document.getElementById('myWebDomain')) loadMyWebDomain(); }, 30000); }
@@ -225,18 +225,18 @@ function fmtWaktu(ms){ var d=new Date(ms), n=new Date(); function p(x){return ('
 function vInbox(){
   window.__sel = window.__sel || new Set();
   view.innerHTML=
-    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">'+
+    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">'+
       // Header biru gaya FAV·MAIL
       '<div class="flex items-center justify-between px-4 py-2.5 text-white text-sm font-semibold" style="background:#1e3a8a">'+
         '<div class="flex items-center gap-3"><i class="fas fa-inbox"></i><span>INBOX</span></div>'+
         '<div><span id="inbCount">0 email</span><span id="inbNew" class="ml-2 opacity-90"></span></div>'+
       '</div>'+
       // Toolbar
-      '<div class="px-4 py-2 flex flex-wrap items-center gap-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">'+
+      '<div class="px-4 py-2 flex flex-wrap items-center gap-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">'+
         '<label class="inline-flex items-center gap-2 text-xs border border-gray-300 dark:border-gray-700 rounded px-2 py-1 cursor-pointer bg-white dark:bg-gray-800"><input id="inbAll" type="checkbox" onchange="inbSelectAll(this.checked)"><span>Pilih semua</span></label>'+
         '<button id="inbDel" onclick="inbBulkDelete()" class="text-xs border border-red-300 text-red-700 bg-red-50 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 px-2 py-1 rounded"><i class="fas fa-trash mr-1"></i>Hapus dipilih</button>'+
         '<div class="relative flex-1 min-w-[180px] max-w-md"><i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>'+
-          '<input id="inbQ" placeholder="Cari email…" class="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"/></div>'+
+          '<input id="inbQ" placeholder="Cari email…" class="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"/></div>'+
         '<span id="inbPageInfo" class="text-xs text-gray-500 ml-auto"></span>'+
         '<div class="flex gap-1"><button onclick="inbPage(-1)" id="inbPrev" class="w-8 h-7 border dark:border-gray-700 rounded text-sm disabled:opacity-30"><i class="fas fa-chevron-left"></i></button><button onclick="inbPage(1)" id="inbNext" class="w-8 h-7 border dark:border-gray-700 rounded text-sm disabled:opacity-30"><i class="fas fa-chevron-right"></i></button></div>'+
       '</div>'+
@@ -297,11 +297,11 @@ async function vDomains(){
 async function loadDomains(){
   const d=await api('/domains');
   $('#domainGrid').innerHTML=(d.domains||[]).map(x=>
-    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-4 flex flex-col gap-3">'+
+    '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3">'+
     '<div class="flex items-center gap-2"><i class="fas fa-globe text-indigo-500"></i><span class="font-mono text-sm truncate">'+esc(x.domain)+'</span></div>'+
     '<span class="text-xs w-fit '+(x.is_active?'bg-green-100 text-green-700':'bg-gray-200 text-gray-600')+' px-2 py-0.5 rounded">'+(x.is_active?'aktif':'nonaktif')+'</span>'+
     '<div class="flex gap-2 mt-auto"><button onclick="toggleDomain(\''+x.id+'\','+(x.is_active?0:1)+')" class="text-xs border dark:border-gray-700 px-2 py-1 rounded flex-1">'+(x.is_active?'Nonaktifkan':'Aktifkan')+'</button><button onclick="delDomain(\''+x.id+'\')" class="text-xs text-red-600 border border-red-200 px-2 py-1 rounded">Hapus</button></div></div>'
-  ).join('') || '<div class="col-span-full text-center text-gray-400 py-10 border border-dashed dark:border-gray-800 rounded-xl">Belum ada domain</div>';
+  ).join('') || '<div class="col-span-full text-center text-gray-400 py-10 border border-dashed dark:border-gray-700 rounded-xl">Belum ada domain</div>';
 }
 async function toggleDomain(id,a){ await api('/domains/toggle',{method:'POST',body:JSON.stringify({id,active:!!a})}); loadDomains(); }
 async function delDomain(id){ if(confirm('Hapus domain?')){ await api('/domains/delete',{method:'POST',body:JSON.stringify({id})}); loadDomains(); } }
@@ -351,17 +351,17 @@ async function vSettings(){
     // === Panel IMAP ===
     '<div id="modeImap" style="display:'+(s.imap_host?'block':'none')+'" class="space-y-3">'+
     field('Host','mis. imap.domain.com',inp('i_host',s.imap_host))+
-    '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+field('TLS','Implicit TLS.',toggle('i_tls',s.imap_tls,'993'))+'</div>'+
+    '<div class="flex flex-wrap gap-4">'+field('Port','993 (TLS).','<input id="i_port" type="number" value="'+esc(s.imap_port)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/>')+field('TLS','Implicit TLS.',toggle('i_tls',s.imap_tls,'993'))+'</div>'+
     field('Username','User login mailbox.',inp('i_user',s.imap_user))+
     field('Password',(s.has_imap_pass?'Sudah tersimpan — kosongkan jika tak ingin ganti.':'Password mailbox (dienkripsi).'),'<input id="i_pass" type="password" placeholder="'+(s.has_imap_pass?'••••••':'')+'" class="'+INP+'"/>')+
     '<div class="flex flex-wrap gap-2 items-center"><button onclick="testImap()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-plug mr-1"></i> Test koneksi</button>'+saveBtn('saveImap()')+'<button onclick="pollNow()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-download mr-1"></i> Tarik email sekarang</button></div>'+
     '<div id="imapTestResult" class="text-sm mt-2"></div>'+
     '</div>')+
   card('Configuration','Aturan pembuatan alamat & penyimpanan email.',
-    field('Batas alamat / pengunjung','Maksimum alamat aktif per pengunjung.','<input id="c_limit" type="number" value="'+esc(s.email_limit)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>')+
+    field('Batas alamat / pengunjung','Maksimum alamat aktif per pengunjung.','<input id="c_limit" type="number" value="'+esc(s.email_limit)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/>')+
     field('Hapus email otomatis setelah','Email di Inbox dihapus setelah durasi ini. 0 = simpan selamanya.',
-      '<div class="flex gap-2 items-center"><input id="c_delv" type="number" min="0" value="'+dp.v+'" class="w-28 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/>'+
-      '<select id="c_delu" class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 py-2 px-3"><option value="1" '+(dp.u===1?'selected':'')+'>Menit</option><option value="60" '+(dp.u===60?'selected':'')+'>Jam</option><option value="1440" '+(dp.u===1440?'selected':'')+'>Hari</option></select></div>')+
+      '<div class="flex gap-2 items-center"><input id="c_delv" type="number" min="0" value="'+dp.v+'" class="w-28 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/>'+
+      '<select id="c_delu" class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"><option value="1" '+(dp.u===1?'selected':'')+'>Menit</option><option value="60" '+(dp.u===60?'selected':'')+'>Jam</option><option value="1440" '+(dp.u===1440?'selected':'')+'>Hari</option></select></div>')+
     saveBtn('saveConfig()'))+
   card('Socials','Ikon sosial media di footer web.','<div id="socList" class="space-y-2 mb-3 max-w-lg"></div><button onclick="addSoc()" class="text-sm border dark:border-gray-700 px-3 py-1.5 rounded-lg mb-3">+ Tambah</button><br>'+saveBtn('saveSocials()'))+
   card('Languages','Bahasa default web publik.',
@@ -387,7 +387,7 @@ async function vSettings(){
     '<label class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg cursor-pointer inline-block">Import<input type="file" id="impFile" class="hidden" onchange="doImport(this)"/></label>');
   renderSoc(); loadKeys(); renderThemeCards();
 }
-function renderSoc(){ $('#socList').innerHTML=window.__soc.map((x,i)=>'<div class="flex gap-2"><input value="'+esc(x.icon)+'" onchange="window.__soc['+i+'].icon=this.value" placeholder="fab fa-twitter" class="w-40 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><input value="'+esc(x.link)+'" onchange="window.__soc['+i+'].link=this.value" placeholder="https://…" class="flex-1 rounded-lg border dark:border-gray-700 dark:bg-gray-800 py-2 px-3"/><button onclick="window.__soc.splice('+i+',1);renderSoc()" class="text-red-600 px-2">&times;</button></div>').join(''); }
+function renderSoc(){ $('#socList').innerHTML=window.__soc.map((x,i)=>'<div class="flex gap-2"><input value="'+esc(x.icon)+'" onchange="window.__soc['+i+'].icon=this.value" placeholder="fab fa-twitter" class="w-40 rounded-lg border dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/><input value="'+esc(x.link)+'" onchange="window.__soc['+i+'].link=this.value" placeholder="https://…" class="flex-1 rounded-lg border dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/><button onclick="window.__soc.splice('+i+',1);renderSoc()" class="text-red-600 px-2">&times;</button></div>').join(''); }
 function addSoc(){ window.__soc.push({icon:'',link:''}); renderSoc(); }
 async function put(patch){ const r=await api('/settings',{method:'POST',body:JSON.stringify(patch)}); if(r.error)alert(r.error); else { toast('Tersimpan'); if(r.settings)window.__S=r.settings; } }
 function readImg(inp,kind){ const f=inp.files[0]; if(!f)return; if(f.size>200000){ alert('Ukuran maksimal 200KB'); inp.value=''; return; } const r=new FileReader(); r.onload=()=>{ window.__img[kind]=r.result; const p=$('#'+kind+'Prev'); if(p)p.src=r.result; const n=$('#'+kind+'Note'); if(n){ n.className='text-xs text-green-600'; n.innerHTML='gambar custom · <button type="button" onclick="clearImg(\''+kind+'\')" class="text-red-600 underline">pakai bawaan</button>'; } }; r.readAsDataURL(f); }
@@ -464,7 +464,7 @@ async function loadUsers(){
     const days=u.expires_at?Math.ceil((u.expires_at-Date.now())/86400000):null;
     const badge=u.status==='active'?'bg-green-100 text-green-700':(u.status==='expired'?'bg-red-100 text-red-700':'bg-gray-200 text-gray-600');
     const warn=(u.status==='active'&&days!=null&&days<=3&&days>=0)?'<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded"><i class="fas fa-triangle-exclamation"></i> '+days+'h</span>':'';
-    return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 p-4">'+
+    return '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">'+
       '<div class="flex items-start justify-between gap-2 mb-2"><div class="min-w-0"><div class="font-medium truncate">'+esc(u.email)+'</div><div class="text-xs text-gray-400">'+esc(u.name||'-')+'</div></div><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+u.status+'</span></div>'+
       '<div class="flex items-center gap-2 text-xs '+(days!=null&&days<=3?'text-amber-600':'text-gray-400')+' mb-3">exp: '+exp+(days!=null?' ('+days+'h)':'')+' '+warn+'</div>'+
       '<div class="flex flex-wrap gap-2 text-xs">'+
@@ -474,7 +474,7 @@ async function loadUsers(){
         '<button onclick="extend(\''+u.id+'\')" class="border dark:border-gray-700 px-2 py-1 rounded">Perpanjang</button>'+
         '<button onclick="toggleUser(\''+u.id+'\',\''+(u.status==='suspended'?'active':'suspended')+'\')" class="border dark:border-gray-700 px-2 py-1 rounded">'+(u.status==='suspended'?'Aktifkan':'Suspend')+'</button>'+
         '<button onclick="delUser(\''+u.id+'\')" class="border border-red-200 text-red-600 px-2 py-1 rounded">Hapus</button></div></div>';
-  }).join('')||'<div class="col-span-full text-center text-gray-400 py-10 border border-dashed dark:border-gray-800 rounded-xl">Belum ada buyer</div>';
+  }).join('')||'<div class="col-span-full text-center text-gray-400 py-10 border border-dashed dark:border-gray-700 rounded-xl">Belum ada buyer</div>';
 }
 function modalCreateBuyer(){
   openModal('<h3 class="text-lg font-bold mb-4">Buat Buyer</h3>'+
@@ -514,7 +514,7 @@ function webSectionHtml(d,id){
     var badge=active?'bg-green-100 text-green-700':(h.status==='manual'?'bg-gray-200 text-gray-600':'bg-amber-100 text-amber-700');
     return '<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 text-sm font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dnsHint(h,d)+'<div class="flex gap-3 mt-2 text-xs">'+(isSub?'':'<button onclick="refreshHost(\''+id+'\',\''+h.id+'\')" class="text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button>')+'<button onclick="delHost(\''+id+'\',\''+h.id+'\')" class="text-red-600">Hapus</button></div></div>';
   }).join('')||'<div class="text-xs text-gray-400 mb-1">Belum ada web domain</div>';
-  return '<div class="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3 mb-2"><h4 class="font-semibold text-sm mb-1"><i class="fas fa-globe mr-1"></i>Web Domain (alamat akses situs & /admin buyer)</h4><p class="text-xs text-gray-400 mb-2">Subdomain '+esc(d.saasZone||'')+' langsung aktif; domain sendiri buyer butuh CNAME.</p>'+webHtml+'<div class="flex gap-2 mt-2"><input id="newHost" placeholder="mail.buyera.com / buyera.com / nama.'+esc(d.saasZone||'')+'" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-2 px-3 text-sm"/><button onclick="addHost(\''+id+'\')" class="bg-indigo-600 text-white px-3 rounded-lg text-sm">Tambah</button></div></div>';
+  return '<div class="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3 mb-2"><h4 class="font-semibold text-sm mb-1"><i class="fas fa-globe mr-1"></i>Web Domain (alamat akses situs & /admin buyer)</h4><p class="text-xs text-gray-400 mb-2">Subdomain '+esc(d.saasZone||'')+' langsung aktif; domain sendiri buyer butuh CNAME.</p>'+webHtml+'<div class="flex gap-2 mt-2"><input id="newHost" placeholder="mail.buyera.com / buyera.com / nama.'+esc(d.saasZone||'')+'" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 py-2 px-3 text-sm"/><button onclick="addHost(\''+id+'\')" class="bg-indigo-600 text-white px-3 rounded-lg text-sm">Tambah</button></div></div>';
 }
 async function modalEditBuyer(id){
   openModal('<div class="text-center text-gray-400 py-6">memuat…</div>', true);
