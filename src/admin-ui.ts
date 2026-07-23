@@ -53,6 +53,7 @@ html:not(.dark) body{background-color:#e4e6eb}
 html:not(.dark) .bg-white{background-color:#f4f5f7!important}
 html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}
 html:not(.dark) .bg-gray-50{background-color:#ecedf1!important}
+@media(max-width:520px){#visitBtn .vlbl{display:none}#visitBtn{padding:14px!important}}
 </style>`;
 
 export function renderAdminShell(brand: string): string {
@@ -573,5 +574,21 @@ window.addEventListener('hashchange', route);
   renderNav(); expiryBanner(); route();
   $('#userBtn').onclick=()=>$('#userMenu').classList.toggle('hidden');
   $('#logoutBtn').onclick=()=>location.href='/admin/logout'+QS;
+  if(ME.role==='buyer') mountVisitBtn();
 })();
+async function mountVisitBtn(){
+  // URL web publik buyer: hostname aktif kalau ada, kalau nggak origin sekarang.
+  var url = location.origin + '/';
+  try{ var d=await api('/webdomain'); var hs=(d&&d.hostnames)||[];
+    var act=hs.find(function(h){return String(h.status).toLowerCase()==='active';})||hs[0];
+    if(act&&act.hostname) url='https://'+act.hostname+'/';
+  }catch(e){}
+  var a=document.createElement('a');
+  a.href=url; a.target='_blank'; a.rel='noopener'; a.id='visitBtn'; a.title='Buka web TMail kamu';
+  a.innerHTML='<i class="fas fa-external-link-alt"></i><span class="vlbl">Lihat Web</span>';
+  a.style.cssText='position:fixed;right:18px;bottom:18px;z-index:60;display:flex;align-items:center;gap:8px;background:#4f46e5;color:#fff;padding:12px 18px;border-radius:9999px;box-shadow:0 6px 20px rgba(79,70,229,.45);font-size:14px;font-weight:600;text-decoration:none;transition:transform .15s,box-shadow .15s';
+  a.onmouseenter=function(){a.style.transform='translateY(-2px)';a.style.boxShadow='0 10px 26px rgba(79,70,229,.55)';};
+  a.onmouseleave=function(){a.style.transform='';a.style.boxShadow='0 6px 20px rgba(79,70,229,.45)';};
+  document.body.appendChild(a);
+}
 `;
