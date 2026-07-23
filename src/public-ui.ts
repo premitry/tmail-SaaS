@@ -220,6 +220,7 @@ export function renderPublicPage(o: PublicOpts): string {
         <div class="flex flex-wrap gap-3 justify-center">
           <button id="btnCreate" class="bp-btn" style="background:${c.secondary};color:#fff;border-color:${c.secondary}"><i class="fas fa-check"></i> CREATE</button>
           <button id="btnRandom" class="bp-btn"><i class="fas fa-bolt"></i> GENERATE ACAK</button>
+          <button id="btnCancel" onclick="cancelCreate()" class="bp-btn" style="display:none"><i class="fas fa-arrow-left"></i> BATAL</button>
         </div>
       </div>
       <div id="activePanel" class="flex-col gap-3" style="display:none">
@@ -228,7 +229,7 @@ export function renderPublicPage(o: PublicOpts): string {
           <button data-act="copy" class="act bp-btn md:w-36"><i class="far fa-copy"></i> COPY</button>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <button onclick="createAddr('')" class="bp-btn" style="background:${c.secondary};color:#fff;border-color:${c.secondary}"><i class="fas fa-sync-alt"></i> GENERATE NEW</button>
+          <button onclick="showCreate()" class="bp-btn" style="background:${c.secondary};color:#fff;border-color:${c.secondary}"><i class="fas fa-plus"></i> BUAT BARU</button>
           <button data-act="refresh" class="act bp-btn"><i class="fas fa-sync-alt"></i> REFRESH</button>
           <button data-act="share" class="act bp-btn"><i class="fas fa-share-nodes"></i> SHARE</button>
           <button data-act="clear" class="act bp-btn"><i class="far fa-trash-alt"></i> DELETE</button>
