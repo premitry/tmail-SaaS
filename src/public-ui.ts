@@ -211,9 +211,16 @@ export function renderPublicPage(o: PublicOpts): string {
       <h1 class="text-3xl md:text-4xl font-bold text-center mb-3" style="color:${c.primary}">${esc(heading)}</h1>
       <p class="text-center mb-1" style="color:${c.primary}">${esc(subtitle)}</p>
       <p class="text-center text-sm mb-6" style="color:${c.primary};opacity:.6">No signup · Free · Instant</p>
-      <div id="createPanel" class="flex flex-col sm:flex-row gap-3 justify-center" style="display:none">
-        <select id="domain" class="bp-btn" style="min-width:200px">${domainOptions}</select>
-        <button id="btnRandom" class="bp-btn" style="background:${c.secondary};color:#fff;border-color:${c.secondary}"><i class="fas fa-bolt"></i> GENERATE</button>
+      <div id="createPanel" class="flex flex-col gap-3 items-center" style="display:none">
+        <div class="flex flex-col sm:flex-row gap-0 w-full max-w-2xl" style="border:2px solid ${c.primary};border-radius:4px;overflow:hidden">
+          <input id="username" placeholder="username (opsional)" class="flex-1 min-w-0 font-mono" style="background:#fff;color:${c.primary};padding:11px 14px;border:0;outline:none;font-size:15px" />
+          <span class="hidden sm:flex items-center px-2 font-bold" style="background:#fff;color:${c.primary}">@</span>
+          <select id="domain" class="font-mono font-bold" style="background:#efe9dd;color:${c.primary};border:0;padding:11px 14px;cursor:pointer;outline:none;min-width:190px">${domainOptions}</select>
+        </div>
+        <div class="flex flex-wrap gap-3 justify-center">
+          <button id="btnCreate" class="bp-btn" style="background:${c.secondary};color:#fff;border-color:${c.secondary}"><i class="fas fa-check"></i> CREATE</button>
+          <button id="btnRandom" class="bp-btn"><i class="fas fa-bolt"></i> GENERATE ACAK</button>
+        </div>
       </div>
       <div id="activePanel" class="flex-col gap-3" style="display:none">
         <div class="flex flex-col md:flex-row gap-3">
