@@ -272,7 +272,6 @@ async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
     }
     return json({ ok: true, status: h.status });
   }
-
   if (path === "/buyers" && req.method === "POST") {
     const b = await body(req);
     if (!b.email || !b.password) return json({ error: "email & password wajib" });
