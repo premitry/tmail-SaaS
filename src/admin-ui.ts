@@ -151,7 +151,7 @@ function expiryBanner(){
   if(ME.role!=='buyer') return;
   const b=$('#banner');
   if(ME.demo){ b.innerHTML='<div class="bg-indigo-600 text-white text-sm px-6 py-2 flex items-center gap-2"><i class="fas fa-eye"></i><span><b>Mode Demo</b> — bebas lihat-lihat semua menu. Perubahan (simpan/hapus/ganti password) dinonaktifkan.</span></div>'; return; }
-  if(ME.impersonating){ b.innerHTML='<div class="bg-amber-500 text-white text-sm px-6 py-2 flex justify-between items-center"><span><i class="fas fa-user-secret mr-2"></i>Login sebagai buyer ini (impersonation).</span><a href="/admin/logout'+QS+'" class="underline">Keluar</a></div>'; return; }
+  if(ME.impersonating){ return; } // banner dihapus; pakai floating "Kembali ke Owner"
   if(ME.expiresInDays!=null && ME.expiresInDays<=3 && !sessionStorage.getItem('exp_dismissed')){
     b.innerHTML='<div class="bg-red-600 text-white text-sm px-6 py-2 flex justify-between items-center"><span><i class="fas fa-triangle-exclamation mr-2"></i>Langganan mau habis — sisa '+ME.expiresInDays+' hari.</span><button onclick="this.closest(\'div\').remove();sessionStorage.setItem(\'exp_dismissed\',\'1\')" class="text-lg leading-none">&times;</button></div>';
   }
@@ -329,7 +329,7 @@ async function vSettings(){
     '<div class="flex flex-wrap gap-6">'+colorField('g_c1','Warna Primer','Sidebar.',s.color_primary)+colorField('g_c2','Sekunder','Tombol Create.',s.color_secondary)+colorField('g_c3','Tersier','Tombol Random.',s.color_tertiary)+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
-  card('Terima Email','Pilih cara TMail menerima email masuk untuk domain-domainmu.',
+  (ME.impersonating ? card('Terima Email','Pilih cara TMail menerima email masuk untuk domain-domainmu. (Hanya kelihatan oleh owner.)',
     // Toggle mode
     (function(){ var mode = s.imap_host ? 'imap' : 'worker'; window.__mailMode = mode;
       var opt = function(k,label,desc){ var on = mode===k;
@@ -360,7 +360,7 @@ async function vSettings(){
     field('Password',(s.has_imap_pass?'Sudah tersimpan — kosongkan jika tak ingin ganti.':'Password mailbox (dienkripsi).'),'<input id="i_pass" type="password" placeholder="'+(s.has_imap_pass?'••••••':'')+'" class="'+INP+'"/>')+
     '<div class="flex flex-wrap gap-2 items-center"><button onclick="testImap()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-plug mr-1"></i> Test koneksi</button>'+saveBtn('saveImap()')+'<button onclick="pollNow()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-download mr-1"></i> Tarik email sekarang</button></div>'+
     '<div id="imapTestResult" class="text-sm mt-2"></div>'+
-    '</div>')+
+    '</div>') : '')+
   card('Configuration','Aturan pembuatan alamat & penyimpanan email.',
     field('Batas alamat / pengunjung','Maksimum alamat aktif per pengunjung.','<input id="c_limit" type="number" value="'+esc(s.email_limit)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/>')+
     field('Hapus email otomatis setelah','Email di Inbox dihapus setelah durasi ini. 0 = ikut batas maksimal. Catatan: ada batas global mutlak 14 hari — email lebih tua dari itu pasti dihapus.',
