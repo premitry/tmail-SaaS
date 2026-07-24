@@ -55,7 +55,7 @@ html:not(.dark) body{background-color:#e4e6eb}
 html:not(.dark) .bg-white{background-color:#f4f5f7!important}
 html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}
 html:not(.dark) .bg-gray-50{background-color:#ecedf1!important}
-@media(max-width:520px){#visitBtn .vlbl{display:none}#visitBtn{padding:14px!important}}
+@media(max-width:520px){#visitBtn .vlbl,#backOwnerBtn .vlbl{display:none}#visitBtn,#backOwnerBtn{padding:14px!important}}
 </style>`;
 
 export function renderAdminShell(brand: string): string {
@@ -112,7 +112,7 @@ async function api(path, opts){
   return r.json();
 }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function toast(m){ const d=document.createElement('div'); d.textContent=m; d.className='fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50'; document.body.appendChild(d); setTimeout(()=>d.remove(),2000); }
+function toast(m){ const d=document.createElement('div'); d.innerHTML='<i class="fas fa-check-circle mr-1"></i>'+m; d.className='fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-lg shadow-2xl text-sm font-medium'; d.style.zIndex='9999'; document.body.appendChild(d); setTimeout(()=>d.remove(),2000); }
 function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60)return s+'d'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'j'; return Math.floor(s/86400)+'h'; }
 function fmtTime(ms){ var d=new Date(ms), n=new Date(); function p(x){return ('0'+x).slice(-2);} var t=p(d.getHours())+':'+p(d.getMinutes()); return d.toDateString()===n.toDateString()?t:(p(d.getDate())+'/'+p(d.getMonth()+1)+' '+t); }
 
@@ -599,7 +599,18 @@ window.addEventListener('hashchange', route);
   $('#userBtn').onclick=()=>$('#userMenu').classList.toggle('hidden');
   $('#logoutBtn').onclick=()=>location.href='/admin/logout'+QS;
   if(ME.role==='buyer') mountVisitBtn();
+  if(ME.impersonating) mountBackOwnerBtn();
 })();
+function mountBackOwnerBtn(){
+  var a=document.createElement('a');
+  a.href='/admin/logout'+QS; a.id='backOwnerBtn'; a.title='Kembali ke dashboard owner';
+  a.innerHTML='<i class="fas fa-arrow-left"></i><span class="vlbl">Kembali ke Owner</span>';
+  // ditaruh di atas tombol Lihat Web biar gak numpuk
+  a.style.cssText='position:fixed;right:18px;bottom:74px;z-index:61;display:flex;align-items:center;gap:8px;background:#d97706;color:#fff;padding:12px 18px;border-radius:9999px;box-shadow:0 6px 20px rgba(217,119,6,.45);font-size:14px;font-weight:600;text-decoration:none;transition:transform .15s,box-shadow .15s';
+  a.onmouseenter=function(){a.style.transform='translateY(-2px)';a.style.boxShadow='0 10px 26px rgba(217,119,6,.55)';};
+  a.onmouseleave=function(){a.style.transform='';a.style.boxShadow='0 6px 20px rgba(217,119,6,.45)';};
+  document.body.appendChild(a);
+}
 async function mountVisitBtn(){
   // URL web publik buyer: hostname aktif kalau ada, kalau nggak origin sekarang.
   var url = location.origin + '/';
