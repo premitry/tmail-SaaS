@@ -513,7 +513,7 @@ function webSectionHtml(d,id){
     var isSub=d.saasZone && h.hostname.toLowerCase().endsWith('.'+d.saasZone.toLowerCase());
     var active=h.status==='active';
     var badge=active?'bg-green-100 text-green-700':(h.status==='manual'?'bg-gray-200 text-gray-600':'bg-amber-100 text-amber-700');
-    return '<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 text-sm font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dnsHint(h,d)+'<div class="flex gap-3 mt-2 text-xs">'+(isSub?'':'<button onclick="refreshHost(\''+id+'\',\''+h.id+'\')" class="text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button>')+'<button onclick="delHost(\''+id+'\',\''+h.id+'\')" class="text-red-600">Hapus</button></div></div>';
+    return '<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2"><div class="flex items-center justify-between gap-2"><a href="https://'+esc(h.hostname)+'" target="_blank" class="font-mono text-indigo-600 text-sm font-semibold truncate">'+esc(h.hostname)+' ↗</a><span class="text-xs '+badge+' px-2 py-0.5 rounded whitespace-nowrap">'+esc(h.status)+'</span></div>'+dnsHint(h,d)+'<div class="flex gap-3 mt-2 text-xs">'+(isSub?'':'<button onclick="refreshHost(\''+id+'\',\''+h.id+'\')" class="text-blue-600"><i class="fas fa-rotate mr-1"></i>Cek status</button><button onclick="hostDns(\''+h.id+'\')" class="text-indigo-600"><i class="fas fa-list-ul mr-1"></i>Cara pasang DNS</button>')+'<button onclick="delHost(\''+id+'\',\''+h.id+'\')" class="text-red-600">Hapus</button></div></div>';
   }).join('')||'<div class="text-xs text-gray-400 mb-1">Belum ada web domain</div>';
   return '<div class="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3 mb-2"><h4 class="font-semibold text-sm mb-1"><i class="fas fa-globe mr-1"></i>Web Domain (alamat akses situs & /admin buyer)</h4><p class="text-xs text-gray-400 mb-2">Subdomain '+esc(d.saasZone||'')+' langsung aktif; domain sendiri buyer butuh CNAME.</p>'+webHtml+'<div class="flex gap-2 mt-2"><input id="newHost" placeholder="mail.buyera.com / buyera.com / nama.'+esc(d.saasZone||'')+'" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 py-2 px-3 text-sm"/><button onclick="addHost(\''+id+'\')" class="bg-indigo-600 text-white px-3 rounded-lg text-sm">Tambah</button></div></div>';
 }
@@ -556,6 +556,27 @@ async function showDetail(id){
 async function addHost(id){ var v=$('#newHost').value.trim(); if(!v)return; var r=await api('/buyers/hostname',{method:'POST',body:JSON.stringify({id:id,hostname:v})}); if(r.error){alert(r.error);return;} toast(r.warn?('Ditambah (catatan: '+r.warn+')'):'Web domain ditambah'); if(window.__wRefresh)window.__wRefresh(); }
 async function delHost(id,hid){ if(!confirm('Hapus web domain ini?'))return; await api('/buyers/hostname/delete',{method:'POST',body:JSON.stringify({id:id,hostnameId:hid})}); if(window.__wRefresh)window.__wRefresh(); }
 async function refreshHost(id,hid){ var r=await api('/buyers/hostname/refresh',{method:'POST',body:JSON.stringify({hostnameId:hid})}); toast('Status: '+(r.status||'?')); if(window.__wRefresh)window.__wRefresh(); }
+function _cpv(btn){ var v=btn.getAttribute('data-v'); if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(v);}else{var t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(t);} var o=btn.textContent;btn.textContent='ok!';setTimeout(function(){btn.textContent=o;},900); }
+async function hostDns(hid){
+  openModal('<div class="text-center text-gray-400 py-6">memuat detail DNS…</div>', true);
+  var r=await api('/buyers/hostname/dns',{method:'POST',body:JSON.stringify({hostnameId:hid})});
+  if(r.error){ openModal('<h3 class="text-lg font-bold mb-2">Cara pasang DNS</h3><p class="text-red-600 text-sm">'+esc(r.error)+'</p><div class="text-right mt-4"><button onclick="closeModal()" class="border dark:border-gray-700 px-4 py-2 rounded-lg">Tutup</button></div>', true); return; }
+  var active=r.status==='active'||r.ssl_status==='active';
+  function rowRec(type,name,val,note){ return '<div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-2 mb-2 text-xs"><div class="flex justify-between"><span class="font-bold">'+type+(note?' <span class="text-gray-400 font-normal">('+note+')</span>':'')+'</span></div><div class="mt-1"><span class="text-gray-500">Nama:</span> <code class="break-all">'+esc(name)+'</code> <button data-v="'+esc(name)+'" onclick="_cpv(this)" class="text-indigo-600 ml-1">salin</button></div><div class="mt-0.5"><span class="text-gray-500">Value:</span> <code class="break-all">'+esc(val)+'</code> <button data-v="'+esc(val)+'" onclick="_cpv(this)" class="text-indigo-600 ml-1">salin</button></div></div>'; }
+  var recs=(r.records||[]).map(function(x){return rowRec(x.type,x.name,x.value,x.note);}).join('');
+  var errHtml=(r.errors&&r.errors.length)?'<div class="text-amber-600 text-xs mb-2"><i class="fas fa-triangle-exclamation mr-1"></i>'+r.errors.map(esc).join('<br>')+'</div>':'';
+  var routingHtml = rowRec('A','@ / '+esc(r.hostname.split('.')[0]), r.cfIps[0], 'arahkan traffic ke Cloudflare')+
+    '<div class="text-xs text-gray-500 mb-2">— atau kalau bisa CNAME: <code>'+esc(r.cfTarget)+'</code> (lebih disarankan)</div>';
+  openModal('<h3 class="text-lg font-bold mb-1">Cara pasang DNS</h3>'+
+    '<p class="text-xs text-gray-400 mb-3">Domain: <b class="font-mono">'+esc(r.hostname)+'</b> · status: <b>'+esc(r.status)+'</b></p>'+
+    (active?'<div class="text-green-600 text-sm mb-3"><i class="fas fa-check-circle mr-1"></i>Domain sudah AKTIF & siap dipakai.</div>':
+      errHtml+
+      '<div class="font-semibold text-sm mb-1">1. Arahkan domain (traffic)</div>'+routingHtml+
+      '<div class="font-semibold text-sm mb-1 mt-3">2. Tambah TXT ini buat validasi SSL</div>'+
+      (recs||'<div class="text-xs text-gray-400 mb-2">TXT belum tersedia — klik "Cek lagi" beberapa detik lagi.</div>')+
+      '<p class="text-xs text-gray-400 mt-1">Buat provider yang gak bisa CNAME (mis. freedns): pakai <b>A record</b> di atas + <b>TXT</b> ini. Setelah dipasang, tunggu propagasi lalu Cek lagi.</p>')+
+    '<div class="flex justify-between mt-4"><button onclick="hostDns(\''+hid+'\')" class="text-indigo-600 text-sm"><i class="fas fa-rotate mr-1"></i>Cek lagi</button><button onclick="closeModal()" class="border dark:border-gray-700 px-4 py-2 rounded-lg">Tutup</button></div>', true);
+}
 async function extend(id){ const days=prompt('Perpanjang berapa hari dari sekarang? (0 = tanpa batas)','30'); if(days==null)return; await api('/buyers/expiry',{method:'POST',body:JSON.stringify({id,days:+days})}); loadUsers(); }
 async function toggleUser(id,status){ await api('/buyers/status',{method:'POST',body:JSON.stringify({id,status})}); loadUsers(); }
 async function delUser(id){ if(confirm('Hapus buyer + semua datanya?')){ await api('/buyers/delete',{method:'POST',body:JSON.stringify({id})}); loadUsers(); } }

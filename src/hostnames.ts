@@ -4,6 +4,8 @@ import type { Env } from "./types";
 
 const CF_API = "https://api.cloudflare.com/client/v4";
 
+export interface DnsRecord { type: string; name: string; value: string; note?: string; }
+
 export async function provisionHostname(env: Env, hostname: string):
   Promise<{ cfId: string; status: string; error?: string }> {
   const h = hostname.trim().toLowerCase();
@@ -19,7 +21,9 @@ export async function provisionHostname(env: Env, hostname: string):
     const r = await fetch(`${CF_API}/zones/${env.CF_ZONE_ID}/custom_hostnames`, {
       method: "POST",
       headers: { "authorization": `Bearer ${env.CF_API_TOKEN}`, "content-type": "application/json" },
-      body: JSON.stringify({ hostname, ssl: { method: "http", type: "dv" } }),
+      // TXT DCV: bisa aktif walau buyer pakai A record (bukan CNAME) — cocok utk DNS
+      // provider yang gak bisa CNAME (mis. freedns shared domain).
+      body: JSON.stringify({ hostname, ssl: { method: "txt", type: "dv" } }),
     });
     const data = (await r.json()) as any;
     if (!data.success) {
@@ -43,6 +47,39 @@ export async function getHostnameStatus(env: Env, cfId: string): Promise<string 
     // gabungkan status hostname + ssl
     const ssl = data.result.ssl?.status;
     return ssl === "active" ? "active" : (data.result.status || "pending");
+  } catch {
+    return null;
+  }
+}
+
+/** Ambil detail DNS yang harus dipasang buyer (TXT DCV + ownership) + status. */
+export async function getHostnameDns(env: Env, cfId: string):
+  Promise<{ status: string; ssl_status?: string; records: DnsRecord[]; errors: string[] } | null> {
+  if (!env.CF_API_TOKEN || !env.CF_ZONE_ID || !cfId) return null;
+  try {
+    const r = await fetch(`${CF_API}/zones/${env.CF_ZONE_ID}/custom_hostnames/${cfId}`, {
+      headers: { "authorization": `Bearer ${env.CF_API_TOKEN}` },
+    });
+    const data = (await r.json()) as any;
+    if (!data.success) return null;
+    const res = data.result;
+    const records: DnsRecord[] = [];
+    // 1. TXT ownership verification (kadang diminta CF utk hostname non-CNAME).
+    const ov = res.ownership_verification;
+    if (ov && ov.type === "txt" && ov.name && ov.value) records.push({ type: "TXT", name: ov.name, value: ov.value, note: "ownership" });
+    // 2. TXT DCV utk sertifikat SSL.
+    const ssl = res.ssl || {};
+    const vrs: any[] = ssl.validation_records || [];
+    for (const v of vrs) {
+      if (v.txt_name && v.txt_value) records.push({ type: "TXT", name: v.txt_name, value: v.txt_value, note: "ssl" });
+    }
+    if (!vrs.length && ssl.txt_name && ssl.txt_value) records.push({ type: "TXT", name: ssl.txt_name, value: ssl.txt_value, note: "ssl" });
+    return {
+      status: ssl.status === "active" ? "active" : (res.status || "pending"),
+      ssl_status: ssl.status,
+      records,
+      errors: [...(res.verification_errors || []), ...((ssl.validation_errors || []).map((e: any) => e.message || String(e)))],
+    };
   } catch {
     return null;
   }

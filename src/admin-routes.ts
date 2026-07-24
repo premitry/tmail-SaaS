@@ -5,7 +5,7 @@ import { DB } from "./db";
 import { getSessionCtx, login, sessionCookie, clearCookie, isSecure } from "./auth";
 import { renderLogin, renderAdminShell } from "./admin-ui";
 import { encryptSecret, decryptSecret } from "./crypto";
-import { provisionHostname, deleteHostname, getHostnameStatus } from "./hostnames";
+import { provisionHostname, deleteHostname, getHostnameStatus, getHostnameDns } from "./hostnames";
 import { testImapConnection } from "./imap";
 import { watcherStub } from "./watcher";
 
@@ -271,6 +271,15 @@ async function ownerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx)
       return json({ ok: true, status: st || h.status });
     }
     return json({ ok: true, status: h.status });
+  }
+  if (path === "/buyers/hostname/dns" && req.method === "POST") {
+    const b = await body(req);
+    const h = await db.getHostname(b.hostnameId);
+    if (!h || !h.cf_hostname_id) return json({ error: "hostname belum diprovision di CF" }, 404);
+    const info = await getHostnameDns(env, h.cf_hostname_id);
+    if (!info) return json({ error: "gagal ambil detail dari Cloudflare" }, 502);
+    if (info.status && info.status !== h.status) await db.setHostnameStatus(h.id, info.status).catch(() => {});
+    return json({ ok: true, hostname: h.hostname, cfTarget: env.SAAS_ZONE ? "saas." + env.SAAS_ZONE : "", cfIps: ["104.21.54.232", "172.67.143.33"], ...info });
   }
   if (path === "/buyers" && req.method === "POST") {
     const b = await body(req);
