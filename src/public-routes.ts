@@ -6,7 +6,7 @@ import { renderDocs } from "./docs";
 import { parseCookies } from "./auth";
 import { inboxStub, genLocalPart } from "./store";
 import { watcherStub } from "./watcher";
-import { MANTIS_PATTERN } from "./assets";
+import { MANTIS_PATTERN, FAVICON_SVG } from "./assets";
 import { TAILWIND_CSS } from "./tailwind-css";
 
 function dataUrlToResponse(dataUrl: string, contentType: string): Response {
@@ -42,8 +42,7 @@ export async function handlePublic(
   }
 
   if (path === "/favicon.svg" || path === "/favicon.ico") {
-    const emoji = "📮";
-    return new Response(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${emoji}</text></svg>`,
+    return new Response(FAVICON_SVG,
       { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
   }
 

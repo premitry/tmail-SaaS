@@ -18,7 +18,7 @@ export interface PublicOpts {
 // Halaman konten sederhana (FAQ / Privacy / Contact) — dipakai semua tema.
 export function renderContentPage(brand: string, logoUrl: string, faviconUrl: string, colors: { primary: string }, title: string, content: string): string {
   const logo = logoUrl || DEFAULT_LOGO;
-  const favicon = faviconUrl || DEFAULT_LOGO;
+  const favicon = faviconUrl || "/favicon.svg";
   return `${head(brand + " — " + title, "", favicon, false)}
 <body class="bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col">
   <header class="text-white px-6 py-4 flex items-center justify-between" style="background-color:${colors.primary}">
@@ -78,7 +78,7 @@ export function renderPublicPage(o: PublicOpts): string {
   const c = o.colors;
   const layout = o.theme === "mantis" ? "mantis" : o.theme === "nebula" ? "nebula" : o.theme === "blueprint" ? "blueprint" : "sidebar";
   const logo = o.logoUrl || DEFAULT_LOGO;
-  const favicon = o.faviconUrl || DEFAULT_LOGO;
+  const favicon = o.faviconUrl || "/favicon.svg";
   const page = layout === "nebula" ? "bg-slate-950 text-gray-200" : "bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-200";
   const panelDisplay = (layout === "mantis" || layout === "blueprint") ? "flex" : "block";
   const heading = o.heroHeading || "Dapatkan Email Sementara dalam Sekejap";
@@ -410,7 +410,7 @@ setInterval(()=>{ if(addr) loadInbox(); }, 15000);
 // Layar kunci (Lock / Kunci Web) — gate password sebelum akses situs.
 export function renderLockScreen(brand: string, logoUrl: string, faviconUrl: string, text: string, primary: string): string {
   const logo = logoUrl || DEFAULT_LOGO;
-  const favicon = faviconUrl || DEFAULT_LOGO;
+  const favicon = faviconUrl || "/favicon.svg";
   return `${head(brand + " — Terkunci", "", favicon)}
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center px-4">
   <form id="lf" class="bg-gray-800 w-full max-w-sm rounded-2xl shadow-xl border border-gray-700 p-8 text-center space-y-4">

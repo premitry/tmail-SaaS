@@ -4,6 +4,7 @@ import type { Env } from "./types";
 import { DB } from "./db";
 import { getSessionCtx, login, sessionCookie, clearCookie, isSecure } from "./auth";
 import { esc, head } from "./ui";
+import { FAVICON_SVG } from "./assets";
 
 const html = (body: string, status = 200) =>
   new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
@@ -123,7 +124,7 @@ export async function handleMailHub(req: Request, url: URL, env: Env, db: DB): P
   const secure = isSecure(url);
 
   if (path === "/favicon.svg" || path === "/favicon.ico") {
-    return new Response(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📬</text></svg>`,
+    return new Response(FAVICON_SVG,
       { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
   }
 
