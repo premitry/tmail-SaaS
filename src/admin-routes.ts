@@ -78,7 +78,10 @@ export async function handleAdmin(req: Request, url: URL, env: Env, db: DB, tena
 
   // Halaman /admin
   if (path === "/admin") {
-    if (!session) return html(renderLogin(brandGuess, loginRole));
+    if (!session) {
+      const isDemoHost = tenant.kind === "buyer" && !!tenant.buyer.is_demo;
+      return html(renderLogin(brandGuess, loginRole, "", isDemoHost));
+    }
     return html(renderAdminShell(session.user.role === "buyer" ? (await db.ensureBuyerSettings(session.user.id)).brand_name : "Owner Panel"));
   }
 
@@ -97,13 +100,19 @@ export async function handleAdmin(req: Request, url: URL, env: Env, db: DB, tena
 async function buyerApi(req: Request, url: URL, env: Env, db: DB, s: SessionCtx): Promise<Response> {
   const path = url.pathname.replace("/admin/api", "");
   const buyerId = s.user.id;
+  const isDemo = !!s.user.is_demo && !s.impersonatorId; // owner yg login-as tetap bisa edit
+
+  // Mode demo: read-only. Blokir semua aksi yg mengubah data (POST).
+  if (isDemo && req.method === "POST") {
+    return json({ error: "🔒 Mode demo — perubahan dinonaktifkan. Ini akun contoh buat lihat-lihat aja." }, 403);
+  }
 
   if (path === "/me") {
     const st = await db.ensureBuyerSettings(buyerId);
     const days = s.user.expires_at ? Math.ceil((s.user.expires_at - Date.now()) / 86400000) : null;
     return json({
       role: "buyer", name: s.user.name, email: s.user.email, username: s.user.username || "", brand: st.brand_name,
-      expiresInDays: days, impersonating: !!s.impersonatorId,
+      expiresInDays: days, impersonating: !!s.impersonatorId, demo: isDemo,
     });
   }
   if (path === "/dashboard") return json(await db.getStats(buyerId, parseInt(url.searchParams.get("days") || "14", 10)));

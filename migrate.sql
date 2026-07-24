@@ -35,3 +35,6 @@ INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('hub_brand', 'Mail 
 -- Kolom flag: email masuk ke domain milik OWNER (bukan buyer) — dipisah supaya Mail Hub tampilin catch-all imapku.icu.
 ALTER TABLE messages ADD COLUMN is_hub INTEGER NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_messages_hub ON messages(is_hub, received_at);
+
+-- Akun demo read-only.
+ALTER TABLE users ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0;

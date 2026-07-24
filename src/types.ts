@@ -30,6 +30,7 @@ export interface UserRow {
   status: "active" | "suspended" | "expired";
   expires_at: number | null;
   created_at: number;
+  is_demo?: number;
 }
 
 export interface BuyerSettings {

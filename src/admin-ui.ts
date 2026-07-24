@@ -2,8 +2,9 @@
 import { head, esc } from "./ui";
 import { DEFAULT_LOGO, THEME_PREVIEWS } from "./assets";
 
-export function renderLogin(brand: string, role: "owner" | "buyer", error = ""): string {
+export function renderLogin(brand: string, role: "owner" | "buyer", error = "", demo = false): string {
   const title = role === "owner" ? "Owner Panel" : brand + " Admin";
+  const demoBox = demo ? `<div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3 text-sm text-indigo-900 dark:text-indigo-200"><div class="font-semibold"><i class="fas fa-eye mr-1"></i>Akun Demo — Read Only</div><div class="mt-1">User: <b>demo</b> · Password: <b>demo</b></div><div class="text-xs opacity-80 mt-0.5">Bebas keliling panel; semua perubahan dinonaktifkan.</div></div>` : "";
   return `${head(title + " — Login", '<style>html:not(.dark) body{background-color:#e4e6eb}html:not(.dark) .bg-white{background-color:#f4f5f7!important}html:not(.dark) .bg-gray-100{background-color:#e4e6eb!important}</style>')}
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex items-center justify-center px-4">
   <form id="f" class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 space-y-4">
@@ -11,9 +12,10 @@ export function renderLogin(brand: string, role: "owner" | "buyer", error = ""):
       <div class="text-4xl mb-2">${role === "owner" ? "🛡️" : "📮"}</div>
       <h1 class="text-xl font-bold">${esc(title)}</h1>
     </div>
+    ${demoBox}
     <div id="loginErr" class="hidden bg-red-100 text-red-700 text-sm p-3 rounded-lg text-center">${error ? esc(error) : ""}</div>
-    <input name="email" type="text" placeholder="Email atau username" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-    <input name="password" type="password" placeholder="Password" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <input name="email" type="text" placeholder="Email atau username" required value="${demo ? "demo" : ""}" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <input name="password" type="password" placeholder="Password" required value="${demo ? "demo" : ""}" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
     <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg">Masuk</button>
   </form>
   <script>
@@ -148,6 +150,7 @@ function setActive(hash){ document.querySelectorAll('.navlink').forEach(a=>{ con
 function expiryBanner(){
   if(ME.role!=='buyer') return;
   const b=$('#banner');
+  if(ME.demo){ b.innerHTML='<div class="bg-indigo-600 text-white text-sm px-6 py-2 flex items-center gap-2"><i class="fas fa-eye"></i><span><b>Mode Demo</b> — bebas lihat-lihat semua menu. Perubahan (simpan/hapus/ganti password) dinonaktifkan.</span></div>'; return; }
   if(ME.impersonating){ b.innerHTML='<div class="bg-amber-500 text-white text-sm px-6 py-2 flex justify-between items-center"><span><i class="fas fa-user-secret mr-2"></i>Login sebagai buyer ini (impersonation).</span><a href="/admin/logout'+QS+'" class="underline">Keluar</a></div>'; return; }
   if(ME.expiresInDays!=null && ME.expiresInDays<=3 && !sessionStorage.getItem('exp_dismissed')){
     b.innerHTML='<div class="bg-red-600 text-white text-sm px-6 py-2 flex justify-between items-center"><span><i class="fas fa-triangle-exclamation mr-2"></i>Langganan mau habis — sisa '+ME.expiresInDays+' hari.</span><button onclick="this.closest(\'div\').remove();sessionStorage.setItem(\'exp_dismissed\',\'1\')" class="text-lg leading-none">&times;</button></div>';
