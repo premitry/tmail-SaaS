@@ -329,7 +329,7 @@ async function vSettings(){
     '<div class="flex flex-wrap gap-6">'+colorField('g_c1','Warna Primer','Sidebar.',s.color_primary)+colorField('g_c2','Sekunder','Tombol Create.',s.color_secondary)+colorField('g_c3','Tersier','Tombol Random.',s.color_tertiary)+'</div>'+
     field('Dark Mode','Tampilkan toggle gelap/terang.',toggle('g_dark',s.dark_mode,'Aktifkan'))+
     saveBtn('saveGeneral()'))+
-  (ME.impersonating ? card('Terima Email','Pilih cara TMail menerima email masuk untuk domain-domainmu. (Hanya kelihatan oleh owner.)',
+  card('Terima Email','Cara sistem menerima email masuk untuk domain-domainmu.',
     // Toggle mode
     (function(){ var mode = s.imap_host ? 'imap' : 'worker'; window.__mailMode = mode;
       var opt = function(k,label,desc){ var on = mode===k;
@@ -340,17 +340,17 @@ async function vSettings(){
           '<input type="radio" name="mail_mode" value="'+k+'" '+(on?'checked':'')+' onchange="setMailMode(\''+k+'\')" class="mt-1"/>'+
           '<div><div class="font-semibold text-sm text-gray-900 dark:text-gray-100">'+label+'</div><div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">'+desc+'</div></div></label>';
       };
-      return '<div class="flex flex-col md:flex-row gap-3 mb-1">'+opt('worker','Email Routing (rekomendasi)','Realtime, tanpa VPS. Setup 1x di dashboard CF.')+opt('imap','IMAP','Kalau kamu punya mailbox catch-all sendiri.')+'</div>';
+      return '<div class="flex flex-col md:flex-row gap-3 mb-1">'+opt('worker','Otomatis (Rekomendasi)','Terima email langsung tanpa perlu server sendiri.')+opt('imap','IMAP','Kalau kamu punya mailbox catch-all sendiri.')+'</div>';
     })()+
     // === Panel Email Routing (worker) ===
     '<div id="modeWorker" style="display:'+(s.imap_host?'none':'block')+'" class="text-sm space-y-2">'+
       (function(){ var t=s.last_worker_email_at||0; var ago=t?Math.floor((Date.now()-t)/60000):0;
         var badge = t
-          ? '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium" style="background:#dcfce7;color:#166534"><i class="fas fa-check-circle"></i> Email Routing aktif · terakhir '+(ago<1?'baru saja':ago<60?ago+' menit lalu':ago<1440?Math.floor(ago/60)+' jam lalu':Math.floor(ago/1440)+' hari lalu')+'</div>'
-          : '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium" style="background:#fee2e2;color:#991b1b"><i class="fas fa-exclamation-circle"></i> Belum terdeteksi · setup dulu di dashboard CF</div>';
+          ? '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium" style="background:#dcfce7;color:#166534"><i class="fas fa-check-circle"></i> Penerimaan aktif · email terakhir '+(ago<1?'baru saja':ago<60?ago+' menit lalu':ago<1440?Math.floor(ago/60)+' jam lalu':Math.floor(ago/1440)+' hari lalu')+'</div>'
+          : '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium" style="background:#fee2e2;color:#991b1b"><i class="fas fa-exclamation-circle"></i> Belum aktif · ikuti langkah di bawah</div>';
         return badge;
       })()+
-      '<div class="text-gray-600 dark:text-gray-300">Forward semua email tiap domain ke <b class="font-mono select-all" style="background:rgba(148,163,184,.15);padding:2px 6px;border-radius:4px">catchall@imapku.icu</b></div>'+
+      '<div class="text-gray-600 dark:text-gray-300">Teruskan (forward) semua email domainmu ke alamat ini: <b class="font-mono select-all" style="background:rgba(148,163,184,.15);padding:2px 6px;border-radius:4px">catchall@imapku.icu</b></div>'+
     '</div>'+
     // === Panel IMAP ===
     '<div id="modeImap" style="display:'+(s.imap_host?'block':'none')+'" class="space-y-3">'+
@@ -360,7 +360,7 @@ async function vSettings(){
     field('Password',(s.has_imap_pass?'Sudah tersimpan — kosongkan jika tak ingin ganti.':'Password mailbox (dienkripsi).'),'<input id="i_pass" type="password" placeholder="'+(s.has_imap_pass?'••••••':'')+'" class="'+INP+'"/>')+
     '<div class="flex flex-wrap gap-2 items-center"><button onclick="testImap()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-plug mr-1"></i> Test koneksi</button>'+saveBtn('saveImap()')+'<button onclick="pollNow()" class="border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"><i class="fas fa-download mr-1"></i> Tarik email sekarang</button></div>'+
     '<div id="imapTestResult" class="text-sm mt-2"></div>'+
-    '</div>') : '')+
+    '</div>')+
   card('Configuration','Aturan pembuatan alamat & penyimpanan email.',
     field('Batas alamat / pengunjung','Maksimum alamat aktif per pengunjung.','<input id="c_limit" type="number" value="'+esc(s.email_limit)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/>')+
     field('Hapus email otomatis setelah','Email di Inbox dihapus setelah durasi ini. 0 = ikut batas maksimal. Catatan: ada batas global mutlak 14 hari — email lebih tua dari itu pasti dihapus.',
