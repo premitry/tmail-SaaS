@@ -363,7 +363,7 @@ async function vSettings(){
     '</div>')+
   card('Configuration','Aturan pembuatan alamat & penyimpanan email.',
     field('Batas alamat / pengunjung','Maksimum alamat aktif per pengunjung.','<input id="c_limit" type="number" value="'+esc(s.email_limit)+'" class="w-32 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/>')+
-    field('Hapus email otomatis setelah','Email di Inbox dihapus setelah durasi ini. 0 = simpan selamanya.',
+    field('Hapus email otomatis setelah','Email di Inbox dihapus setelah durasi ini. 0 = ikut batas maksimal. Catatan: ada batas global mutlak 14 hari — email lebih tua dari itu pasti dihapus.',
       '<div class="flex gap-2 items-center"><input id="c_delv" type="number" min="0" value="'+dp.v+'" class="w-28 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"/>'+
       '<select id="c_delu" class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-2 px-3"><option value="1" '+(dp.u===1?'selected':'')+'>Menit</option><option value="60" '+(dp.u===60?'selected':'')+'>Jam</option><option value="1440" '+(dp.u===1440?'selected':'')+'>Hari</option></select></div>')+
     saveBtn('saveConfig()'))+

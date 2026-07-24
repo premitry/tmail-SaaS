@@ -400,11 +400,20 @@ export class DB {
     return r?.c ?? 0;
   }
   async gcAllMessages(): Promise<void> {
+    const now = Date.now();
+    // 1) Per-buyer: hapus sesuai setting "Hapus setelah" (kalau > 0).
     await this.d1.prepare(
-      `DELETE FROM messages WHERE rowid IN (
+      `DELETE FROM messages WHERE is_hub = 0 AND rowid IN (
          SELECT m.rowid FROM messages m JOIN buyer_settings bs ON bs.buyer_id = m.buyer_id
          WHERE bs.delete_after_minutes > 0 AND m.received_at < ? - bs.delete_after_minutes * 60000)`)
-      .bind(Date.now()).run();
+      .bind(now).run();
+    // 2) Batas global MUTLAK 14 hari — email lebih tua pasti dihapus (nutup celah delete_after=0).
+    //    Akun demo dikecualikan biar email contoh tetap ada.
+    const HARD_CAP_MS = 14 * 86_400_000;
+    await this.d1.prepare(
+      `DELETE FROM messages WHERE is_hub = 0 AND received_at < ?
+         AND buyer_id IN (SELECT id FROM users WHERE is_demo = 0)`)
+      .bind(now - HARD_CAP_MS).run();
   }
 
   // Cek masa aktif: tandai expired yang lewat; kembalikan yang ≤ 3 hari untuk notif.
